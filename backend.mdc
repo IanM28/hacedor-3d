@@ -1,0 +1,207 @@
+---
+description: Reglas de backend para Hacedor 3D. Aplica al escribir controllers, routes, services y middleware en Express + Prisma + TypeScript.
+alwaysApply: false
+globs: ["backend/src/**/*.ts"]
+---
+
+# Hacedor 3D — Backend Rules
+
+## Stack
+
+Express.js · TypeScript strict · Prisma ORM · PostgreSQL · JWT · Zod · MercadoPago SDK
+
+## Estructura de respuestas API
+
+Siempre usar este formato consistente:
+
+```typescript
+// Éxito
+res.json({ success: true, data: result })
+
+// Error
+res.status(400).json({ success: false, error: 'Mensaje descriptivo' })
+
+// No encontrado
+res.status(404).json({ success: false, error: 'Recurso no encontrado' })
+```
+
+## Middleware stack (orden en app.ts)
+
+```typescript
+app.use(cors({ origin: process.env.FRONTEND_URL }))
+app.use(express.json())
+app.use('/api/auth', authRoutes)
+app.use('/api/products', productRoutes)
+app.use('/api/categories', categoryRoutes)
+app.use('/api/cart', authOptional, cartRoutes)
+app.use('/api/orders', authenticate, orderRoutes)
+app.use('/api/payments', paymentRoutes)
+app.use('/api/suppliers', authenticate, requireAdmin, supplierRoutes)
+app.use('/api/dashboard', authenticate, requireAdmin, dashboardRoutes)
+app.use(errorHandler) // siempre al final
+```
+
+## Estructura de un controller
+
+```typescript
+// controllers/product.controller.ts
+import { Request, Response, NextFunction } from 'express'
+import { productService } from '../services/product.service'
+
+export const getProducts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { category, search, featured } = req.query
+    const products = await productService.findAll({ category, search, featured })
+    res.json({ success: true, data: products })
+  } catch (error) {
+    next(error) // siempre pasar al errorHandler
+  }
+}
+```
+
+## Validación con Zod (siempre antes de llegar al controller)
+
+```typescript
+// middlewares/validate.ts
+import { z } from 'zod'
+
+export const createProductSchema = z.object({
+  body: z.object({
+    code: z.string().regex(/^[A-Z]+-\d{2}$/), // AERO-01, STN-02
+    name: z.string().min(3),
+    price: z.number().positive(),
+    stock: z.number().int().min(0),
+    categoryId: z.string().uuid(),
+    supplierId: z.string().uuid(),
+  })
+})
+```
+
+## Prisma — reglas de uso
+
+- Siempre usar `prisma.$transaction()` cuando hay múltiples writes relacionados.
+- No exponer `password` en ninguna respuesta — siempre usar `select` o `omit`.
+- El cliente de Prisma debe ser un singleton en `prisma/client.ts`.
+
+```typescript
+// prisma/client.ts
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+export default prisma
+```
+
+## Autenticación JWT
+
+```typescript
+// middlewares/auth.ts
+// authenticate: requiere token válido — 401 si falla
+// authOptional: intenta validar token pero no falla si no existe
+// requireAdmin: requiere role === 'ADMIN' — 403 si falla
+```
+
+Token payload:
+```typescript
+interface JWTPayload {
+  userId: string
+  role: 'CLIENT' | 'ADMIN'
+}
+```
+
+## MercadoPago — flujo completo
+
+```typescript
+// services/mercadopago.service.ts
+import MercadoPago, { Preference } from 'mercadopago'
+
+const client = new MercadoPago({
+  accessToken: process.env.MP_ACCESS_TOKEN!
+})
+
+export async function createPreference(order: OrderWithItems) {
+  const preference = new Preference(client)
+  return await preference.create({
+    body: {
+      items: order.items.map(item => ({
+        id: item.productId,
+        title: `${item.product.code} — ${item.product.name}`,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        currency_id: 'ARS',
+      })),
+      back_urls: {
+        success: `${process.env.FRONTEND_URL}/checkout/success`,
+        failure: `${process.env.FRONTEND_URL}/checkout/failure`,
+        pending: `${process.env.FRONTEND_URL}/checkout/pending`,
+      },
+      auto_return: 'approved',
+      notification_url: `${process.env.BACKEND_URL}/api/payments/webhook`,
+      external_reference: order.id,
+    }
+  })
+}
+```
+
+**Reglas MercadoPago:**
+- Verificar firma del webhook antes de procesar cualquier notificación.
+- Nunca actualizar el estado del pedido solo con `back_urls` — siempre confirmar via webhook.
+- Usar credenciales TEST- durante desarrollo.
+- El webhook debe ser URL pública (usar ngrok en desarrollo).
+
+## Variables de entorno requeridas
+
+```
+PORT=3000
+DATABASE_URL=postgresql://...
+JWT_SECRET=...
+FRONTEND_URL=http://localhost:5173
+BACKEND_URL=http://localhost:3000
+
+MP_ACCESS_TOKEN=TEST-...
+MP_PUBLIC_KEY=TEST-...
+MP_WEBHOOK_SECRET=...
+```
+
+## Endpoints disponibles
+
+```
+POST   /api/auth/register
+POST   /api/auth/login
+
+GET    /api/products              ?category= &search= &featured= &code=
+GET    /api/products/:id
+POST   /api/products              [ADMIN]
+PUT    /api/products/:id          [ADMIN]
+DELETE /api/products/:id          [ADMIN]
+
+GET    /api/categories
+POST   /api/categories            [ADMIN]
+PUT    /api/categories/:id        [ADMIN]
+DELETE /api/categories/:id        [ADMIN]
+
+GET    /api/cart
+POST   /api/cart/items
+PUT    /api/cart/items/:id
+DELETE /api/cart/items/:id
+DELETE /api/cart
+
+POST   /api/orders
+GET    /api/orders
+GET    /api/orders/:id
+PUT    /api/orders/:id/status     [ADMIN]
+
+POST   /api/payments/create-preference
+POST   /api/payments/webhook
+GET    /api/payments/status/:id
+
+GET    /api/suppliers             [ADMIN]
+POST   /api/suppliers             [ADMIN]
+PUT    /api/suppliers/:id         [ADMIN]
+DELETE /api/suppliers/:id         [ADMIN]
+
+GET    /api/dashboard/stats       [ADMIN]
+GET    /api/dashboard/sales       [ADMIN]
+```

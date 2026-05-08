@@ -1,0 +1,193 @@
+---
+description: Reglas de frontend para Hacedor 3D. Aplica al escribir hooks, stores de Zustand, servicios de API y lógica de React.
+alwaysApply: false
+globs: ["frontend/src/hooks/**", "frontend/src/store/**", "frontend/src/services/**"]
+---
+
+# Hacedor 3D — Frontend Logic Rules
+
+## Zustand — cartStore
+
+El store del carrito es el más crítico. Persistir en localStorage.
+
+```typescript
+// store/cartStore.ts
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+
+interface CartItem {
+  productId: string
+  code: string
+  name: string
+  price: number
+  image: string
+  quantity: number
+}
+
+interface CartStore {
+  items: CartItem[]
+  isOpen: boolean
+  addItem: (item: Omit<CartItem, 'quantity'>) => void
+  removeItem: (productId: string) => void
+  updateQuantity: (productId: string, quantity: number) => void
+  clearCart: () => void
+  toggleDrawer: () => void
+  total: () => number
+  itemCount: () => number
+}
+
+export const useCartStore = create<CartStore>()(
+  persist(
+    (set, get) => ({
+      // implementación
+    }),
+    { name: 'hacedor-cart' }
+  )
+)
+```
+
+## TanStack Query — servicios de API
+
+```typescript
+// hooks/useProducts.ts
+import { useQuery } from '@tanstack/react-query'
+import { productService } from '../services/product.service'
+
+export function useProducts(filters: ProductFilters) {
+  return useQuery({
+    queryKey: ['products', filters],
+    queryFn: () => productService.findAll(filters),
+    staleTime: 1000 * 60 * 5, // 5 minutos
+  })
+}
+
+// hooks/useProduct.ts
+export function useProduct(id: string) {
+  return useQuery({
+    queryKey: ['product', id],
+    queryFn: () => productService.findById(id),
+    enabled: !!id,
+  })
+}
+```
+
+## Services — llamadas a la API
+
+```typescript
+// services/product.service.ts
+const API_URL = import.meta.env.VITE_API_URL
+
+export const productService = {
+  async findAll(filters: ProductFilters) {
+    const params = new URLSearchParams(filters as Record<string, string>)
+    const res = await fetch(`${API_URL}/products?${params}`)
+    if (!res.ok) throw new Error('Error al cargar productos')
+    const json = await res.json()
+    return json.data
+  },
+
+  async findById(id: string) {
+    const res = await fetch(`${API_URL}/products/${id}`)
+    if (!res.ok) throw new Error('Producto no encontrado')
+    const json = await res.json()
+    return json.data
+  }
+}
+```
+
+## React Hook Form + Zod — formularios
+
+```typescript
+// Siempre tipar con el schema de Zod
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+
+const checkoutSchema = z.object({
+  contactName: z.string().min(2, 'Nombre requerido'),
+  email: z.string().email('Email inválido'),
+  address: z.string().min(5, 'Dirección requerida'),
+  phone: z.string().min(8, 'Teléfono requerido'),
+  paymentMethod: z.enum(['MERCADOPAGO', 'TRANSFER', 'CASH']),
+})
+
+type CheckoutForm = z.infer<typeof checkoutSchema>
+
+const { register, handleSubmit, formState: { errors } } = useForm<CheckoutForm>({
+  resolver: zodResolver(checkoutSchema)
+})
+```
+
+## WhatsApp — construcción de mensajes
+
+```typescript
+// utils/whatsapp.ts
+const WA_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER
+
+export function buildProductQuery(code: string, name: string): string {
+  const text = `Hola! Quiero consultar sobre *${code}* — ${name}. ¿Tiene stock disponible?`
+  return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`
+}
+
+export function buildOrderQuery(items: CartItem[]): string {
+  const list = items.map(i => `• ${i.code} x${i.quantity}`).join('\n')
+  const text = `Hola! Quiero hacer un pedido por transferencia:\n\n${list}\n\nTotal: $${total}`
+  return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`
+}
+
+// Siempre abrir en nueva pestaña:
+window.open(buildProductQuery(code, name), '_blank')
+```
+
+## Variables de entorno frontend
+
+```
+VITE_API_URL=http://localhost:3000/api
+VITE_WHATSAPP_NUMBER=5492944XXXXXXX
+VITE_MP_PUBLIC_KEY=TEST-...
+```
+
+## Reglas generales
+
+- Custom hooks empiezan con `use` — `useCart`, `useProducts`, `useAuth`.
+- Los hooks NO hacen `console.log` en producción.
+- Los services lanzan `Error` con mensajes en español (son mensajes para el usuario).
+- `useQuery` siempre maneja `isLoading`, `isError` y `data` en el componente.
+- Nunca llamar a `fetch` directamente en un componente — siempre via service.
+- Los mutations de TanStack Query invalidan las queries relacionadas en `onSuccess`.
+
+## Tipos compartidos importantes
+
+```typescript
+// types/index.ts
+export interface Product {
+  id: string
+  code: string        // "AERO-01"
+  name: string
+  description: string
+  price: number
+  stock: number
+  images: string[]
+  isActive: boolean
+  isFeatured: boolean
+  category: Category
+}
+
+export interface Order {
+  id: string
+  status: OrderStatus
+  total: number
+  items: OrderItem[]
+  contactName: string
+  address: string
+  mpPaymentId?: string
+}
+
+export type OrderStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'PREPARING'
+  | 'SHIPPED'
+  | 'DELIVERED'
+  | 'CANCELLED'
+```

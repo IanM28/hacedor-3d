@@ -1,0 +1,142 @@
+---
+description: Sistema de diseño de Hacedor 3D. Aplica al escribir o editar componentes UI, páginas y estilos.
+alwaysApply: false
+globs: ["frontend/src/**/*.tsx", "frontend/src/**/*.css"]
+---
+
+# Hacedor 3D — Sistema de Diseño
+
+## Filosofía visual
+
+Influencias: Apple (minimalismo) · Nothing Phone (alto contraste) · Teenage Engineering (industrial).
+**NO es:** rugoso, improvisado, hobby, plástico barato.
+**SÍ es:** preciso, limpio, técnico, premium.
+
+## CSS Variables — SIEMPRE usar estas, nunca colores hardcodeados
+
+```css
+/* Fondos */
+--color-bg:           #0D0D0D   /* negro dominante */
+--color-surface:      #161616   /* cards, modals */
+--color-surface-2:    #1F1F1F   /* superficie secundaria */
+
+/* Acento — verde del logo */
+--color-accent:       #4A7C59
+--color-accent-hover: #5C9B6E
+--color-accent-dim:   #2E4D37
+
+/* Texto */
+--color-text-primary:   #F2EDE4  /* crema — texto principal */
+--color-text-secondary: #8A8A8A
+--color-text-muted:     #4A4A4A
+
+/* Bordes */
+--color-border:       #2A2A2A
+--color-border-light: #3A3A3A
+
+/* Especiales */
+--color-red:          #C0392B   /* errores, sin stock */
+--color-whatsapp:     #25D366   /* SOLO para botón WhatsApp */
+--color-white:        #FAFAFA
+```
+
+## Tipografía
+
+| Uso | Fuente | Clase Tailwind |
+|-----|--------|----------------|
+| Headings grandes | Bebas Neue | `font-display tracking-wide` |
+| Códigos de producto (AERO-01) | DM Mono | `font-mono` |
+| Todo lo demás | DM Sans | `font-sans` |
+
+**Regla:** cualquier código de producto o dato técnico siempre en `font-mono` con color `--color-accent`.
+
+## Reglas de layout y espaciado
+
+- `border-radius` máximo: `rounded-md` (6px). Nunca `rounded-xl` o `rounded-full` en contenedores.
+- Espaciado generoso en cards de productos — los productos necesitan "aire" para percibirse premium.
+- Alto contraste siempre — nunca texto gris sobre fondo gris.
+- El verde del logo (`--color-accent`) **solo en:** CTA primario, badges, hover de cards, logo.
+- El verde WhatsApp (`--color-whatsapp`) **solo en:** el botón de WhatsApp.
+
+## Componentes — comportamiento esperado
+
+### ProductCard
+```tsx
+// Comportamiento requerido:
+// - Código del producto en font-mono, color accent
+// - Hover: borde verde sutil + swap a segunda imagen si existe
+// - Badge "ÚLTIMAS X UNIDADES" si stock < 5, color red
+// - Badge "DESTACADO" si isFeatured, color accent
+// - Fondo: --color-surface
+```
+
+### Button (variantes)
+```tsx
+// primary:   fondo --color-accent, texto negro, hover --color-accent-hover
+// secondary: borde --color-border, texto primary, fondo transparente
+// whatsapp:  fondo --color-whatsapp, texto blanco, icono MessageCircle
+// danger:    fondo --color-red, texto blanco
+```
+
+### CartDrawer
+- Panel lateral deslizable desde la derecha. **NO** es una página separada.
+- Usar Framer Motion para la animación de entrada/salida.
+- Overlay semitransparente sobre el contenido.
+
+### QuickView
+- Modal con overlay `bg-black/85`.
+- Vista reducida del producto sin cambiar de ruta.
+
+### WhatsAppButton
+```tsx
+interface WhatsAppButtonProps {
+  productCode?: string
+  productName?: string
+  message?: string
+}
+
+// Construir URL así:
+// https://wa.me/${VITE_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}
+// Abrir con window.open(url, '_blank')
+```
+
+### AddToCart — animación requerida
+Al hacer click en "Agregar al carrito", usar Framer Motion para animar
+el ítem volando desde la card hacia el ícono del carrito en el header.
+
+## Estructura de un componente (template)
+
+```tsx
+// components/features/ProductCard.tsx
+import { type FC } from 'react'
+import { motion } from 'framer-motion'
+
+interface ProductCardProps {
+  // tipos explícitos siempre — nunca any
+}
+
+const ProductCard: FC<ProductCardProps> = ({ ... }) => {
+  // lógica mínima — si crece, extraer a useProductCard hook
+  return (
+    // JSX
+  )
+}
+
+export default ProductCard
+// siempre export default — un componente por archivo
+```
+
+## Páginas disponibles
+
+| Ruta | Componente |
+|------|------------|
+| `/` | Home |
+| `/catalogo` | Catalog |
+| `/productos/:id` | ProductDetail |
+| `/checkout` | Checkout |
+| `/checkout/success` | CheckoutSuccess |
+| `/checkout/failure` | CheckoutFailure |
+| `/checkout/pending` | CheckoutPending |
+| `/login` | Login |
+| `/register` | Register |
+| `/admin/*` | Admin (protegido) |

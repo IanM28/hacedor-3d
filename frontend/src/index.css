@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+
+:root {
+  /* Fondos */
+  --color-bg: #0d0d0d;
+  --color-surface: #161616;
+  --color-surface-2: #1f1f1f;
+  /* Acento — verde del logo */
+  --color-accent: #4a7c59;
+  --color-accent-hover: #5c9b6e;
+  --color-accent-dim: #2e4d37;
+  /* Texto */
+  --color-text-primary: #f2ede4;
+  --color-text-secondary: #8a8a8a;
+  --color-text-muted: #4a4a4a;
+  /* Bordes */
+  --color-border: #2a2a2a;
+  --color-border-light: #3a3a3a;
+  /* Especiales */
+  --color-red: #c0392b;
+  --color-whatsapp: #25d366;
+  --color-white: #fafafa;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: 'DM Sans', sans-serif;
+}
+
+.font-display {
+  font-family: 'Bebas Neue', sans-serif;
+}
+
+.font-body {
+  font-family: 'DM Sans', sans-serif;
+}
+
+.font-mono {
+  font-family: 'DM Mono', monospace;
+}

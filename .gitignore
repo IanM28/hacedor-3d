@@ -1,0 +1,19 @@
+node_modules/
+
+# Env (nunca commitear secretos)
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+backend/.env
+backend/.env.*
+
+# Build
+dist/
+frontend/dist/
+backend/dist/
+
+# Logs / OS
+*.log
+.DS_Store

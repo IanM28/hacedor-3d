@@ -1,0 +1,80 @@
+---
+description: Contexto principal de Hacedor 3D. Aplica a todo el proyecto siempre.
+alwaysApply: true
+---
+
+# Hacedor 3D — Reglas del Proyecto
+
+## Qué es este proyecto
+
+Tienda online de **Hacedor 3D**, marca de diseño industrial que usa impresión 3D para
+crear objetos de diseño tecnológico. NO es un servicio de impresión 3D.
+Es una marca de piezas con identidad visual, función y propósito.
+
+## Stack (NO cambiar sin confirmar)
+
+**Frontend:** React 18 + Vite · TypeScript strict · Tailwind CSS · shadcn/ui ·
+Zustand · TanStack Query · React Router v6 · React Hook Form + Zod · Framer Motion · Lucide React
+
+**Backend:** Node.js · Express · TypeScript · Prisma · PostgreSQL · JWT + bcrypt · Zod
+
+**Pagos:** MercadoPago SDK oficial (mercadopago en backend, @mercadopago/sdk-js en frontend)
+
+**Contacto:** WhatsApp via links `wa.me` — sin API externa
+
+## Reglas de código que SIEMPRE debes seguir
+
+- **TypeScript strict** — nunca usar `any`. Tipar todo explícitamente.
+- **Un componente por archivo** — máximo 150 líneas por archivo de componente UI.
+- **Sin lógica en vistas** — toda lógica va en custom hooks o services.
+- **CSS variables siempre** — nunca colores hardcodeados. Usar las variables de `index.css`.
+- **Manejo de errores siempre** — try/catch en todos los services. Estados de error en UI.
+- **Mobile-first** — diseñar primero para 375px, luego escalar con breakpoints.
+- **Variables de entorno** — nunca hardcodear tokens, keys o números de teléfono.
+- **Sin comentarios obvios** — el código debe ser autodocumentado.
+
+## Antes de escribir cualquier código
+
+1. Buscá si ya existe un componente, hook o función similar en el proyecto.
+2. Reutilizá antes de crear. Extendé antes de duplicar.
+3. Si algo es ambiguo, preguntá antes de asumir.
+4. Confirmá qué archivos vas a crear o modificar antes de hacerlo.
+
+## Estructura del proyecto
+
+```
+hacedor-3d/
+├── frontend/src/
+│   ├── components/ui/        # Button, Input, Modal, Badge, Toast
+│   ├── components/layout/    # Header, Footer, CartDrawer
+│   ├── components/features/  # ProductCard, QuickView, CartItem, WhatsAppButton
+│   ├── pages/                # Una carpeta por página
+│   ├── hooks/                # Custom hooks (useCart, useProducts, useAuth)
+│   ├── store/                # Zustand stores
+│   ├── services/             # Llamadas a la API
+│   ├── types/                # Tipos TypeScript compartidos
+│   └── utils/
+└── backend/src/
+    ├── controllers/
+    ├── routes/
+    ├── middlewares/           # auth, validate, errorHandler
+    ├── services/              # mercadopago.service.ts, etc.
+    └── prisma/
+```
+
+## Nomenclatura de productos
+
+Los productos usan códigos técnicos: `AERO-01`, `STN-02`, `MOD-03`.
+Siempre mostrar el código junto al nombre en la UI, en fuente monospace.
+
+## Tono de los mensajes en la UI
+
+- ✅ `"AERO-01 agregado al pedido."`
+- ❌ `"¡Increíble elección! Tu producto fue agregado."`
+- ✅ `"Sin stock disponible."`
+- ❌ `"¡Ups! Nos quedamos sin este producto."`
+
+## Git commits
+
+Usar prefijos: `feat:` `fix:` `refactor:` `style:` `chore:`
+Ejemplo: `feat: add ProductCard with hover image swap`
