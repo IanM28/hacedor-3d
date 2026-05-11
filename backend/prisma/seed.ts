@@ -1,13 +1,12 @@
 import 'dotenv/config'
 import bcrypt from 'bcrypt'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Role } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
 async function seed() {
   console.log('🌱 Iniciando el sembrado de datos (seed)...')
 
-  // 1. Categorías
   const categories = await Promise.all([
     prisma.category.upsert({
       where: { slug: 'aero' },
@@ -26,9 +25,8 @@ async function seed() {
 
   if (!aeroCategory || !modCategory) throw new Error('Error al crear categorías')
 
-  // 2. Proveedor
   const supplier = await prisma.supplier.upsert({
-    where: { id: 'default-supplier' }, // Usamos un ID fijo para el seed
+    where: { id: 'default-supplier' },
     update: {},
     create: {
       id: 'default-supplier',
@@ -41,7 +39,6 @@ async function seed() {
     },
   })
 
-  // 3. Productos
   const productsData = [
     {
       code: 'AERO-01',
@@ -77,6 +74,8 @@ async function seed() {
         description: p.description,
         price: p.price,
         stock: p.stock,
+        categoryId: p.categoryId,
+        supplierId: supplier.id,
       },
       create: {
         code: p.code,
@@ -95,20 +94,21 @@ async function seed() {
     })
   }
 
-  // 4. Usuario Admin
   const adminPasswordHash = await bcrypt.hash('Admin123!', 10)
 
   await prisma.user.upsert({
     where: { email: 'admin@hacedor3d.com' },
     update: {
       password: adminPasswordHash,
+      role: Role.ADMIN,
+      isActive: true,
     },
     create: {
       email: 'admin@hacedor3d.com',
       name: 'Admin',
-      lastName: 'Hacedor3D', // <--- Esto faltaba y causaba el error
+      lastName: 'Hacedor3D',
       password: adminPasswordHash,
-      role: 'ADMIN', // Los Enums se pueden pasar como strings en Prisma
+      role: Role.ADMIN,
       isActive: true,
     },
   })
@@ -120,7 +120,7 @@ seed()
   .then(async () => {
     await prisma.$disconnect()
   })
-  .catch(async (e) => {
+  .catch(async e => {
     console.error('❌ Error en el seed:', e)
     await prisma.$disconnect()
     process.exit(1)
