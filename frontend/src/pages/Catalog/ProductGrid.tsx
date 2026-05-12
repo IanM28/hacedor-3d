@@ -7,9 +7,16 @@ interface ProductGridProps {
   isLoading: boolean
   isError: boolean
   search: string
+  onQuickView?: (product: Product) => void
 }
 
-export default function ProductGrid({ products, isLoading, isError, search: _search }: ProductGridProps) {
+export default function ProductGrid({
+  products,
+  isLoading,
+  isError,
+  search: _search,
+  onQuickView,
+}: ProductGridProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {isLoading && Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)}
@@ -31,7 +38,9 @@ export default function ProductGrid({ products, isLoading, isError, search: _sea
 
       {!isLoading &&
         !isError &&
-        products?.map(product => <ProductCard key={product.id} product={product} />)}
+        products?.map(product => (
+          <ProductCard key={product.id} product={product} onQuickView={onQuickView} />
+        ))}
     </div>
   )
 }

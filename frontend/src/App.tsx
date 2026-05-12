@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import Header from './components/layout/Header'
 import Home from './pages/Home'
 import Catalog from './pages/Catalog'
+import ProductDetail from './pages/ProductDetail'
 
 export function App() {
   return (
@@ -11,6 +12,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/catalogo" element={<Catalog />} />
+          <Route path="/productos/:id" element={<ProductDetail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

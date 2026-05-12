@@ -9,9 +9,10 @@ import type { Product } from '../../types'
 export interface ProductCardProps {
   product: Product
   onAddToCart?: (product: Product) => void
+  onQuickView?: (product: Product) => void
 }
 
-export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
+export default function ProductCard({ product, onAddToCart, onQuickView }: ProductCardProps) {
   const [hovered, setHovered] = useState(false)
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -49,11 +50,24 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
             <span className="font-mono text-xs text-[var(--color-text-muted)]">{product.code}</span>
           </div>
         )}
+
         <div className="absolute left-2 top-2 flex flex-col gap-1">
           {product.isFeatured && <Badge variant="accent">Destacado</Badge>}
           {lowStock && <Badge variant="danger">Últimas {product.stock} unidades</Badge>}
           {outOfStock && <Badge variant="muted">Sin stock</Badge>}
         </div>
+
+        {onQuickView && hovered && (
+          <div className="absolute inset-0 flex items-end justify-center pb-3">
+            <button
+              type="button"
+              onClick={e => { e.stopPropagation(); onQuickView(product) }}
+              className="rounded-md bg-[var(--color-bg)]/80 px-3 py-1.5 font-mono text-[10px] tracking-wide text-[var(--color-text-primary)] backdrop-blur-sm transition-colors hover:bg-[var(--color-surface)]"
+            >
+              Vista rápida
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-4">
@@ -65,21 +79,10 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           ${product.price.toLocaleString('es-AR')}
         </p>
         <div className="mt-auto flex flex-col gap-2">
-          <Button
-            size="sm"
-            variant="primary"
-            disabled={outOfStock}
-            onClick={handleAddToCart}
-            className="w-full"
-          >
+          <Button size="sm" variant="primary" disabled={outOfStock} onClick={handleAddToCart} className="w-full">
             {outOfStock ? 'Sin stock' : 'Agregar al carrito'}
           </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => navigate(`/productos/${product.id}`)}
-            className="w-full"
-          >
+          <Button size="sm" variant="secondary" onClick={() => navigate(`/productos/${product.id}`)} className="w-full">
             Ver detalle
           </Button>
         </div>

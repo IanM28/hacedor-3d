@@ -2,14 +2,17 @@ import { useEffect, useState } from 'react'
 import { useProducts } from '../../hooks/useProducts'
 import { useCategories } from '../../hooks/useCategories'
 import Input from '../../components/ui/Input'
+import QuickView from '../../components/features/QuickView'
 import CatalogFilters from './CatalogFilters'
 import ProductGrid from './ProductGrid'
+import type { Product } from '../../types'
 
 export default function Catalog() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>()
   const [featuredOnly, setFeaturedOnly] = useState(false)
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null)
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300)
@@ -61,9 +64,16 @@ export default function Catalog() {
             isLoading={isLoading}
             isError={isError}
             search={debouncedSearch}
+            onQuickView={setQuickViewProduct}
           />
         </div>
       </div>
+
+      <QuickView
+        product={quickViewProduct}
+        isOpen={Boolean(quickViewProduct)}
+        onClose={() => setQuickViewProduct(null)}
+      />
     </div>
   )
 }

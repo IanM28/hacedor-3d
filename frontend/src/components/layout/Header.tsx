@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Menu, ShoppingCart, User, X } from 'lucide-react'
 
 const navLinks = [
-  { label: 'Inicio', href: '/' },
-  { label: 'Colección', href: '/catalogo' },
+  { label: 'Inicio', to: '/' },
+  { label: 'Colección', to: '/catalogo' },
 ]
 
 export default function Header() {
@@ -12,24 +13,24 @@ export default function Header() {
   return (
     <header className="fixed top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-bg)]">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <a href="/" className="flex flex-col leading-none">
+        <Link to="/" className="flex flex-col leading-none">
           <span className="font-display text-xl tracking-wide text-[var(--color-text-primary)]">
             HACEDOR 3D
           </span>
           <span className="font-mono text-[9px] tracking-widest text-[var(--color-accent)]">
             3D FACTORY
           </span>
-        </a>
+        </Link>
 
         <nav className="hidden items-center gap-6 sm:flex" aria-label="Navegación principal">
           {navLinks.map(link => (
-            <a
-              key={link.href}
-              href={link.href}
+            <Link
+              key={link.to}
+              to={link.to}
               className="font-body text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -73,14 +74,14 @@ export default function Header() {
           aria-label="Navegación mobile"
         >
           {navLinks.map(link => (
-            <a
-              key={link.href}
-              href={link.href}
+            <Link
+              key={link.to}
+              to={link.to}
               onClick={() => setMobileOpen(false)}
               className="block py-3 font-body text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
       )}

@@ -1,0 +1,95 @@
+import { useState } from 'react'
+import { Minus, Plus } from 'lucide-react'
+import Button from '../../components/ui/Button'
+import Badge from '../../components/ui/Badge'
+import { useToast } from '../../components/ui/useToast'
+import { buildProductQuery } from '../../utils/whatsapp'
+import type { Product } from '../../types'
+
+export default function ProductInfo({ product }: { product: Product }) {
+  const [qty, setQty] = useState(1)
+  const { toast } = useToast()
+  const outOfStock = product.stock === 0
+  const lowStock = !outOfStock && product.stock < 5
+
+  const stockColor = outOfStock || lowStock
+    ? 'text-[var(--color-red)]'
+    : 'text-[var(--color-text-secondary)]'
+
+  const stockLabel = outOfStock
+    ? 'Sin stock disponible.'
+    : lowStock
+      ? `Últimas ${product.stock} unidades`
+      : `${product.stock} unidades disponibles`
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <span className="font-mono text-sm text-[var(--color-accent)]">{product.code}</span>
+        <h1 className="mt-2 font-display text-4xl leading-tight tracking-wide text-[var(--color-text-primary)] sm:text-5xl">
+          {product.name}
+        </h1>
+        <p className="mt-3 font-mono text-2xl text-[var(--color-text-primary)]">
+          ${product.price.toLocaleString('es-AR')}
+        </p>
+      </div>
+
+      <Badge variant="muted">{product.category.name}</Badge>
+
+      <p className="font-body text-sm leading-relaxed text-[var(--color-text-secondary)]">
+        {product.description}
+      </p>
+
+      <p className={`font-mono text-xs ${stockColor}`}>{stockLabel}</p>
+
+      {!outOfStock && (
+        <div className="flex items-center gap-3">
+          <span className="font-body text-sm text-[var(--color-text-secondary)]">Cantidad</span>
+          <div className="flex items-center rounded-md border border-[var(--color-border)]">
+            <button
+              type="button"
+              aria-label="Reducir cantidad"
+              onClick={() => setQty(q => Math.max(1, q - 1))}
+              disabled={qty <= 1}
+              className="flex size-8 items-center justify-center rounded-l-md text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)] disabled:opacity-40"
+            >
+              <Minus className="size-3" />
+            </button>
+            <span className="w-8 text-center font-mono text-sm text-[var(--color-text-primary)]">
+              {qty}
+            </span>
+            <button
+              type="button"
+              aria-label="Aumentar cantidad"
+              onClick={() => setQty(q => Math.min(product.stock, q + 1))}
+              disabled={qty >= product.stock}
+              className="flex size-8 items-center justify-center rounded-r-md text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)] disabled:opacity-40"
+            >
+              <Plus className="size-3" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2">
+        <Button
+          variant="primary"
+          disabled={outOfStock}
+          onClick={() => toast.info('Carrito disponible en la siguiente fase.')}
+          className="w-full"
+        >
+          {outOfStock ? 'Sin stock' : 'Agregar al carrito'}
+        </Button>
+        <Button
+          variant="whatsapp"
+          onClick={() =>
+            window.open(buildProductQuery(product.code, product.name), '_blank', 'noopener,noreferrer')
+          }
+          className="w-full"
+        >
+          Consultar por WhatsApp
+        </Button>
+      </div>
+    </div>
+  )
+}
