@@ -4,6 +4,8 @@ import express from 'express'
 
 import { authenticate, authOptional, requireAdmin } from './middlewares/auth'
 import { errorHandler } from './middlewares/errorHandler'
+import productRoutes from './routes/product.routes'
+import categoryRoutes from './routes/category.routes'
 
 export const app = express()
 
@@ -23,29 +25,6 @@ app.get('/health', (_req, res) => {
 const authRoutes = express.Router()
 authRoutes.post('/register', placeholder('POST /api/auth/register'))
 authRoutes.post('/login', placeholder('POST /api/auth/login'))
-
-const productRoutes = express.Router()
-productRoutes.get('/', placeholder('GET /api/products'))
-productRoutes.get('/:id', placeholder('GET /api/products/:id'))
-productRoutes.post('/', authenticate, requireAdmin, placeholder('POST /api/products [ADMIN]'))
-productRoutes.put('/:id', authenticate, requireAdmin, placeholder('PUT /api/products/:id [ADMIN]'))
-productRoutes.delete(
-  '/:id',
-  authenticate,
-  requireAdmin,
-  placeholder('DELETE /api/products/:id [ADMIN]'),
-)
-
-const categoryRoutes = express.Router()
-categoryRoutes.get('/', placeholder('GET /api/categories'))
-categoryRoutes.post('/', authenticate, requireAdmin, placeholder('POST /api/categories [ADMIN]'))
-categoryRoutes.put('/:id', authenticate, requireAdmin, placeholder('PUT /api/categories/:id [ADMIN]'))
-categoryRoutes.delete(
-  '/:id',
-  authenticate,
-  requireAdmin,
-  placeholder('DELETE /api/categories/:id [ADMIN]'),
-)
 
 const cartRoutes = express.Router()
 cartRoutes.get('/', placeholder('GET /api/cart'))
