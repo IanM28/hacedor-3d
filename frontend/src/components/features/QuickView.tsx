@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
-import { useToast } from '../ui/useToast'
+import { useCartStore } from '../../store/cartStore'
 import { buildProductQuery } from '../../utils/whatsapp'
 import type { Product } from '../../types'
 
@@ -17,12 +17,10 @@ export interface QuickViewProps {
 
 export default function QuickView({ product, isOpen, onClose }: QuickViewProps) {
   const navigate = useNavigate()
-  const { toast } = useToast()
+  const { addItem } = useCartStore()
 
   const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    },
+    (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() },
     [onClose],
   )
 
@@ -49,9 +47,7 @@ export default function QuickView({ product, isOpen, onClose }: QuickViewProps) 
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          onMouseDown={e => {
-            if (e.target === e.currentTarget) onClose()
-          }}
+          onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}
         >
           <motion.div
             role="dialog"
@@ -104,7 +100,7 @@ export default function QuickView({ product, isOpen, onClose }: QuickViewProps) 
                     size="sm"
                     variant="primary"
                     disabled={product.stock === 0}
-                    onClick={() => toast.info('Carrito disponible en la siguiente fase.')}
+                    onClick={() => addItem(product)}
                     className="w-full"
                   >
                     {product.stock === 0 ? 'Sin stock' : 'Agregar al carrito'}

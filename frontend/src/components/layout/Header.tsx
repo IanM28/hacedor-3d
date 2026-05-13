@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Menu, ShoppingCart, User, X } from 'lucide-react'
+import { useCartStore } from '../../store/cartStore'
 
 const navLinks = [
   { label: 'Inicio', to: '/' },
@@ -9,6 +10,8 @@ const navLinks = [
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { toggleDrawer, itemCount } = useCartStore()
+  const count = itemCount()
 
   return (
     <header className="fixed top-0 z-50 w-full border-b border-[var(--color-border)] bg-[var(--color-bg)]">
@@ -37,7 +40,8 @@ export default function Header() {
         <div className="flex items-center gap-1">
           <button
             type="button"
-            aria-label="Carrito, 0 productos"
+            aria-label={`Carrito, ${count} ${count === 1 ? 'producto' : 'productos'}`}
+            onClick={toggleDrawer}
             className="relative rounded-md p-2 text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
           >
             <ShoppingCart className="size-5" />
@@ -45,7 +49,7 @@ export default function Header() {
               className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-[var(--color-accent)] font-mono text-[10px] leading-none text-[var(--color-bg)]"
               aria-hidden
             >
-              0
+              {count > 99 ? '99' : count}
             </span>
           </button>
 

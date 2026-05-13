@@ -33,6 +33,16 @@ export interface Product {
   createdAt?: string
 }
 
+export interface CartItem {
+  productId: string
+  code: string
+  name: string
+  price: number
+  image: string
+  quantity: number
+  stock: number
+}
+
 export interface ProductFilters {
   category?: string
   search?: string

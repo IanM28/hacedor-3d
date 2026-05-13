@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
-import { useToast } from '../../components/ui/useToast'
+import { useCartStore } from '../../store/cartStore'
 import { buildProductQuery } from '../../utils/whatsapp'
 import type { Product } from '../../types'
 
 export default function ProductInfo({ product }: { product: Product }) {
   const [qty, setQty] = useState(1)
-  const { toast } = useToast()
+  const { addItem } = useCartStore()
   const outOfStock = product.stock === 0
   const lowStock = !outOfStock && product.stock < 5
 
@@ -75,7 +75,7 @@ export default function ProductInfo({ product }: { product: Product }) {
         <Button
           variant="primary"
           disabled={outOfStock}
-          onClick={() => toast.info('Carrito disponible en la siguiente fase.')}
+          onClick={() => addItem(product, qty)}
           className="w-full"
         >
           {outOfStock ? 'Sin stock' : 'Agregar al carrito'}

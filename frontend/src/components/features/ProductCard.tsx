@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
-import { useToast } from '../ui/useToast'
+import { useCartStore } from '../../store/cartStore'
 import type { Product } from '../../types'
 
 export interface ProductCardProps {
@@ -15,7 +15,7 @@ export interface ProductCardProps {
 export default function ProductCard({ product, onAddToCart, onQuickView }: ProductCardProps) {
   const [hovered, setHovered] = useState(false)
   const navigate = useNavigate()
-  const { toast } = useToast()
+  const { addItem } = useCartStore()
 
   const secondImage = product.images[1]
   const displayImage = hovered && secondImage ? secondImage : product.images[0]
@@ -26,7 +26,7 @@ export default function ProductCard({ product, onAddToCart, onQuickView }: Produ
     if (onAddToCart) {
       onAddToCart(product)
     } else {
-      toast.info('Carrito disponible en la siguiente fase.')
+      addItem(product)
     }
   }
 
