@@ -6,6 +6,8 @@ import { authenticate, authOptional, requireAdmin } from './middlewares/auth'
 import { errorHandler } from './middlewares/errorHandler'
 import productRoutes from './routes/product.routes'
 import categoryRoutes from './routes/category.routes'
+import cartRoutes from './routes/cart.routes'
+import orderRoutes from './routes/order.routes'
 
 export const app = express()
 
@@ -26,19 +28,6 @@ const authRoutes = express.Router()
 authRoutes.post('/register', placeholder('POST /api/auth/register'))
 authRoutes.post('/login', placeholder('POST /api/auth/login'))
 
-const cartRoutes = express.Router()
-cartRoutes.get('/', placeholder('GET /api/cart'))
-cartRoutes.post('/items', placeholder('POST /api/cart/items'))
-cartRoutes.put('/items/:id', placeholder('PUT /api/cart/items/:id'))
-cartRoutes.delete('/items/:id', placeholder('DELETE /api/cart/items/:id'))
-cartRoutes.delete('/', placeholder('DELETE /api/cart'))
-
-const orderRoutes = express.Router()
-orderRoutes.post('/', placeholder('POST /api/orders'))
-orderRoutes.get('/', placeholder('GET /api/orders'))
-orderRoutes.get('/:id', placeholder('GET /api/orders/:id'))
-orderRoutes.put('/:id/status', requireAdmin, placeholder('PUT /api/orders/:id/status [ADMIN]'))
-
 const paymentRoutes = express.Router()
 paymentRoutes.post('/create-preference', placeholder('POST /api/payments/create-preference'))
 paymentRoutes.post('/webhook', placeholder('POST /api/payments/webhook'))
@@ -58,7 +47,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/products', productRoutes)
 app.use('/api/categories', categoryRoutes)
 app.use('/api/cart', authOptional, cartRoutes)
-app.use('/api/orders', authenticate, orderRoutes)
+app.use('/api/orders', orderRoutes)
 app.use('/api/payments', paymentRoutes)
 app.use('/api/suppliers', authenticate, requireAdmin, supplierRoutes)
 app.use('/api/dashboard', authenticate, requireAdmin, dashboardRoutes)
