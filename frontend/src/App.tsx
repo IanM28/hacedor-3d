@@ -4,6 +4,7 @@ import CartDrawer from './components/layout/CartDrawer'
 import Home from './pages/Home'
 import Catalog from './pages/Catalog'
 import ProductDetail from './pages/ProductDetail'
+import Checkout from './pages/Checkout'
 
 export function App() {
   return (
@@ -15,6 +16,7 @@ export function App() {
           <Route path="/" element={<Home />} />
           <Route path="/catalogo" element={<Catalog />} />
           <Route path="/productos/:id" element={<ProductDetail />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

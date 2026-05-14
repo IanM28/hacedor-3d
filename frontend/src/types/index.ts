@@ -49,3 +49,52 @@ export interface ProductFilters {
   featured?: boolean
   code?: string
 }
+
+export type PaymentMethod = 'TRANSFER' | 'MERCADOPAGO' | 'CASH'
+export type OrderStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'PREPARING'
+  | 'SHIPPED'
+  | 'DELIVERED'
+  | 'CANCELLED'
+
+export interface OrderItemInput {
+  productId: string
+  quantity: number
+}
+
+export interface CreateOrderInput {
+  guestEmail?: string
+  contactName: string
+  address: string
+  phone: string
+  paymentMethod: PaymentMethod
+  shippingCost?: number
+  items: OrderItemInput[]
+}
+
+export interface OrderItem {
+  id: string
+  productId: string
+  quantity: number
+  unitPrice: number
+  product?: Product
+}
+
+export interface Order {
+  id: string
+  userId?: string | null
+  guestEmail?: string | null
+  status: OrderStatus
+  total: number
+  shippingCost: number
+  contactName: string
+  address: string
+  phone: string
+  paymentMethod: PaymentMethod
+  mpPaymentId?: string | null
+  mpPreferenceId?: string | null
+  createdAt: string
+  items: OrderItem[]
+}

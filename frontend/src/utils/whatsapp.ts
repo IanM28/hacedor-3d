@@ -1,3 +1,5 @@
+import type { CartItem } from '../types'
+
 const WA_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER
 
 export function buildProductQuery(code: string, name: string): string {
@@ -5,14 +7,25 @@ export function buildProductQuery(code: string, name: string): string {
   return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`
 }
 
-export interface OrderQueryItem {
-  code: string
-  name: string
-  quantity: number
+interface BuildOrderQueryParams {
+  orderId: string
+  items: CartItem[]
+  total: number
+  contactName: string
 }
 
-export function buildOrderQuery(items: OrderQueryItem[], total: number): string {
-  const list = items.map(i => `• ${i.code} — ${i.name} x${i.quantity}`).join('\n')
-  const message = `Hola! Quiero hacer un pedido por transferencia:\n\n${list}\n\nTotal: $${total.toLocaleString('es-AR')}`
+export function buildOrderQuery({
+  orderId,
+  items,
+  total,
+  contactName,
+}: BuildOrderQueryParams): string {
+  const list = items.map(i => `• ${i.code} x${i.quantity}`).join('\n')
+  const message =
+    `Hola! Quiero confirmar mi pedido por transferencia.\n` +
+    `Pedido: #${orderId.slice(0, 8).toUpperCase()}\n` +
+    `Nombre: ${contactName}\n` +
+    `Items:\n${list}\n` +
+    `Total: $${total.toLocaleString('es-AR')}`
   return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(message)}`
 }
