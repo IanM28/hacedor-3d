@@ -8,6 +8,7 @@ import productRoutes from './routes/product.routes'
 import categoryRoutes from './routes/category.routes'
 import cartRoutes from './routes/cart.routes'
 import orderRoutes from './routes/order.routes'
+import paymentRoutes from './routes/payment.routes'
 
 export const app = express()
 
@@ -18,7 +19,13 @@ app.use(
     origin: frontendUrl,
   }),
 )
-app.use(express.json())
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      ;(req as express.Request).rawBody = buf.toString('utf8')
+    },
+  }),
+)
 
 app.get('/health', (_req, res) => {
   res.json({ success: true, data: { ok: true, service: 'hacedor-3d-api' } })
@@ -27,11 +34,6 @@ app.get('/health', (_req, res) => {
 const authRoutes = express.Router()
 authRoutes.post('/register', placeholder('POST /api/auth/register'))
 authRoutes.post('/login', placeholder('POST /api/auth/login'))
-
-const paymentRoutes = express.Router()
-paymentRoutes.post('/create-preference', placeholder('POST /api/payments/create-preference'))
-paymentRoutes.post('/webhook', placeholder('POST /api/payments/webhook'))
-paymentRoutes.get('/status/:paymentId', placeholder('GET /api/payments/status/:paymentId'))
 
 const supplierRoutes = express.Router()
 supplierRoutes.get('/', placeholder('GET /api/suppliers [ADMIN]'))
