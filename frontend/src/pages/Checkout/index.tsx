@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCartStore } from '../../store/cartStore'
 import { useCreateOrder } from '../../hooks/useCreateOrder'
+import { useCreatePaymentPreference } from '../../hooks/useCreatePaymentPreference'
 import { useToast } from '../../components/ui/useToast'
 import { buildOrderQuery } from '../../utils/whatsapp'
 import Button from '../../components/ui/Button'
@@ -14,9 +15,13 @@ export default function Checkout() {
   const navigate = useNavigate()
   const { items, total, clearCart } = useCartStore()
   const orderTotal = total()
-  const { mutateAsync, isPending } = useCreateOrder()
+  const { mutateAsync: createOrder, isPending: isCreatingOrder } = useCreateOrder()
+  const { mutateAsync: createPreference, isPending: isCreatingPreference } =
+    useCreatePaymentPreference()
   const { toast } = useToast()
   const [confirmedOrder, setConfirmedOrder] = useState<Order | null>(null)
+
+  const isSubmitting = isCreatingOrder || isCreatingPreference
 
   if (confirmedOrder) {
     return (
@@ -55,26 +60,49 @@ export default function Checkout() {
 
   async function handleSubmit(values: CheckoutFormValues) {
     try {
-      const order = await mutateAsync({
+      const order = await createOrder({
         guestEmail: values.guestEmail,
         contactName: values.contactName,
         address: values.address,
         phone: values.phone,
-        paymentMethod: 'TRANSFER',
+        paymentMethod: values.paymentMethod,
         items: items.map(i => ({ productId: i.productId, quantity: i.quantity })),
       })
 
-      const waUrl = buildOrderQuery({
+      if (values.paymentMethod === 'TRANSFER') {
+        const waUrl = buildOrderQuery({
+          orderId: order.id,
+          items,
+          total: orderTotal,
+          contactName: values.contactName,
+        })
+        const link = document.createElement('a')
+        link.href = waUrl
+        link.target = '_blank'
+        link.rel = 'noopener noreferrer'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        clearCart()
+        setConfirmedOrder(order)
+        return
+      }
+
+      // MERCADOPAGO
+      const preference = await createPreference({
         orderId: order.id,
-        items,
-        total: orderTotal,
-        contactName: values.contactName,
+        guestEmail: values.guestEmail,
       })
-      window.open(waUrl, '_blank', 'noopener,noreferrer')
-      clearCart()
-      setConfirmedOrder(order)
+
+      const redirectUrl = preference.init_point ?? preference.sandbox_init_point
+      if (!redirectUrl) {
+        toast.error('No se obtuvo URL de pago. Intentá de nuevo.')
+        return
+      }
+
+      window.location.assign(redirectUrl)
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error al crear el pedido'
+      const message = error instanceof Error ? error.message : 'Error al procesar el pedido'
       toast.error(message)
     }
   }
@@ -85,7 +113,7 @@ export default function Checkout() {
         CHECKOUT
       </h1>
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
-        <CheckoutForm onSubmit={handleSubmit} isSubmitting={isPending} />
+        <CheckoutForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
         <OrderSummary items={items} total={orderTotal} />
       </div>
     </div>

@@ -23,11 +23,20 @@ export default function CheckoutForm({ onSubmit, isSubmitting }: CheckoutFormPro
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { paymentMethod: 'TRANSFER' },
   })
+
+  const paymentMethod = watch('paymentMethod')
+  const isMercadoPago = paymentMethod === 'MERCADOPAGO'
+
+  const radioBase =
+    'flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors'
+  const radioSelected = 'border-[var(--color-accent)] bg-[var(--color-surface)]'
+  const radioIdle = 'border-[var(--color-border)] bg-[var(--color-surface-2)]'
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
@@ -67,7 +76,7 @@ export default function CheckoutForm({ onSubmit, isSubmitting }: CheckoutFormPro
           Método de pago
         </span>
 
-        <label className="flex cursor-pointer items-start gap-3 rounded-md border border-[var(--color-accent)] bg-[var(--color-surface)] p-3">
+        <label className={`${radioBase} ${paymentMethod === 'TRANSFER' ? radioSelected : radioIdle}`}>
           <input
             type="radio"
             value="TRANSFER"
@@ -84,19 +93,29 @@ export default function CheckoutForm({ onSubmit, isSubmitting }: CheckoutFormPro
           </div>
         </label>
 
-        <label className="flex cursor-not-allowed items-start gap-3 rounded-md border border-[var(--color-border)] bg-[var(--color-surface-2)] p-3 opacity-50">
-          <input type="radio" disabled className="mt-0.5 accent-[var(--color-accent)]" />
+        <label className={`${radioBase} ${isMercadoPago ? radioSelected : radioIdle}`}>
+          <input
+            type="radio"
+            value="MERCADOPAGO"
+            {...register('paymentMethod')}
+            className="mt-0.5 accent-[var(--color-accent)]"
+          />
           <div>
-            <p className="font-body text-sm text-[var(--color-text-secondary)]">MercadoPago</p>
-            <p className="font-mono text-xs text-[var(--color-text-muted)]">
-              Disponible en la siguiente iteración
+            <p className="font-body text-sm text-[var(--color-text-primary)]">MercadoPago</p>
+            <p className="font-mono text-xs text-[var(--color-text-secondary)]">
+              Tarjeta, débito o saldo MP
             </p>
           </div>
         </label>
       </div>
 
-      <Button type="submit" variant="whatsapp" isLoading={isSubmitting} className="w-full">
-        Confirmar pedido por WhatsApp
+      <Button
+        type="submit"
+        variant={isMercadoPago ? 'primary' : 'whatsapp'}
+        isLoading={isSubmitting}
+        className="w-full"
+      >
+        {isMercadoPago ? 'Pagar con MercadoPago' : 'Confirmar pedido por WhatsApp'}
       </Button>
     </form>
   )

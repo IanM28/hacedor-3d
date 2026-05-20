@@ -120,8 +120,8 @@ export const mercadopagoService = {
       }
     }
 
-    const frontendUrl = requireEnv('FRONTEND_URL')
-    const backendUrl = requireEnv('BACKEND_URL')
+    const frontendUrl = requireEnv('FRONTEND_URL').replace(/\/$/, '')
+    const backendUrl = requireEnv('BACKEND_URL').replace(/\/$/, '')
 
     const client = getMpConfig()
     const preference = new Preference(client)
