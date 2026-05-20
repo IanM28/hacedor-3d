@@ -8,6 +8,8 @@ import Checkout from './pages/Checkout'
 import CheckoutSuccess from './pages/CheckoutSuccess'
 import CheckoutFailure from './pages/CheckoutFailure'
 import CheckoutPending from './pages/CheckoutPending'
+import Login from './pages/Auth/Login'
+import Register from './pages/Auth/Register'
 
 export function App() {
   return (
@@ -23,6 +25,8 @@ export function App() {
           <Route path="/checkout/success" element={<CheckoutSuccess />} />
           <Route path="/checkout/failure" element={<CheckoutFailure />} />
           <Route path="/checkout/pending" element={<CheckoutPending />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/registro" element={<Register />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

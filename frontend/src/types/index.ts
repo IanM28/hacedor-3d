@@ -50,6 +50,35 @@ export interface ProductFilters {
   code?: string
 }
 
+export type Role = 'CLIENT' | 'ADMIN'
+
+export interface AuthUser {
+  id: string
+  email: string
+  name: string
+  lastName: string
+  role: Role
+  isActive: boolean
+  createdAt?: string
+}
+
+export interface AuthResponse {
+  user: AuthUser
+  token: string
+}
+
+export interface LoginInput {
+  email: string
+  password: string
+}
+
+export interface RegisterInput {
+  email: string
+  password: string
+  name: string
+  lastName: string
+}
+
 export type PaymentMethod = 'TRANSFER' | 'MERCADOPAGO' | 'CASH'
 export type OrderStatus =
   | 'PENDING'
