@@ -5,6 +5,9 @@ import Home from './pages/Home'
 import Catalog from './pages/Catalog'
 import ProductDetail from './pages/ProductDetail'
 import Checkout from './pages/Checkout'
+import CheckoutSuccess from './pages/CheckoutSuccess'
+import CheckoutFailure from './pages/CheckoutFailure'
+import CheckoutPending from './pages/CheckoutPending'
 
 export function App() {
   return (
@@ -17,6 +20,9 @@ export function App() {
           <Route path="/catalogo" element={<Catalog />} />
           <Route path="/productos/:id" element={<ProductDetail />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Route path="/checkout/failure" element={<CheckoutFailure />} />
+          <Route path="/checkout/pending" element={<CheckoutPending />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

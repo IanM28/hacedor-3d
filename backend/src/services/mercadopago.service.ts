@@ -1,5 +1,6 @@
 import crypto from 'crypto'
 import { MercadoPagoConfig, Payment, Preference } from 'mercadopago'
+import type { PreferenceRequest } from 'mercadopago/dist/clients/preference/commonTypes'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '../prisma/client'
 
@@ -91,6 +92,41 @@ function extractDataIdFromQuery(query: Record<string, unknown>): string | undefi
   return undefined
 }
 
+interface CheckoutBackUrls {
+  success: string
+  failure: string
+  pending: string
+}
+
+function normalizeBaseUrl(name: string): string {
+  return requireEnv(name).trim().replace(/\/$/, '')
+}
+
+function buildCheckoutBackUrls(frontendUrl: string): CheckoutBackUrls {
+  const back_urls: CheckoutBackUrls = {
+    success: `${frontendUrl}/checkout/success`,
+    failure: `${frontendUrl}/checkout/failure`,
+    pending: `${frontendUrl}/checkout/pending`,
+  }
+
+  if (!back_urls.success || !back_urls.failure || !back_urls.pending) {
+    throw httpError('FRONTEND_URL inválida para back_urls', 500)
+  }
+
+  return back_urls
+}
+
+function supportsAutoReturn(backUrls: CheckoutBackUrls): boolean {
+  try {
+    const { hostname, protocol } = new URL(backUrls.success)
+    const isLocalHost =
+      hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0'
+    return protocol === 'https:' && !isLocalHost
+  } catch {
+    return false
+  }
+}
+
 export const mercadopagoService = {
   async createPreferenceForOrder({
     orderId,
@@ -120,36 +156,35 @@ export const mercadopagoService = {
       }
     }
 
-    const frontendUrl = requireEnv('FRONTEND_URL').replace(/\/$/, '')
-    const backendUrl = requireEnv('BACKEND_URL').replace(/\/$/, '')
+    const frontendUrl = normalizeBaseUrl('FRONTEND_URL')
+    const backendUrl = normalizeBaseUrl('BACKEND_URL')
+    const back_urls = buildCheckoutBackUrls(frontendUrl)
+
+    const preferenceBody: PreferenceRequest = {
+      items: order.items.map(item => ({
+        id: item.productId,
+        title: `${item.product.code} - ${item.product.name}`,
+        description: item.product.description || item.product.code,
+        quantity: item.quantity,
+        unit_price: item.unitPrice,
+        currency_id: 'ARS',
+      })),
+      payer: {
+        name: order.contactName,
+        email: order.guestEmail ?? order.user?.email ?? '',
+      },
+      back_urls,
+      notification_url: `${backendUrl}/api/payments/webhook`,
+      external_reference: order.id,
+    }
+
+    if (supportsAutoReturn(back_urls)) {
+      preferenceBody.auto_return = 'approved'
+    }
 
     const client = getMpConfig()
     const preference = new Preference(client)
-
-    const response = await preference.create({
-      body: {
-        items: order.items.map(item => ({
-          id: item.productId,
-          title: `${item.product.code} - ${item.product.name}`,
-          description: item.product.description || item.product.code,
-          quantity: item.quantity,
-          unit_price: item.unitPrice,
-          currency_id: 'ARS',
-        })),
-        payer: {
-          name: order.contactName,
-          email: order.guestEmail ?? order.user?.email ?? '',
-        },
-        back_urls: {
-          success: `${frontendUrl}/checkout/success`,
-          failure: `${frontendUrl}/checkout/failure`,
-          pending: `${frontendUrl}/checkout/pending`,
-        },
-        auto_return: 'approved',
-        notification_url: `${backendUrl}/api/payments/webhook`,
-        external_reference: order.id,
-      },
-    })
+    const response = await preference.create({ body: preferenceBody })
 
     if (response.id) {
       await prisma.order.update({
