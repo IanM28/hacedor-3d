@@ -4,6 +4,7 @@ import express from 'express'
 
 import { authenticate, authOptional, requireAdmin } from './middlewares/auth'
 import { errorHandler } from './middlewares/errorHandler'
+import authRoutes from './routes/auth.routes'
 import productRoutes from './routes/product.routes'
 import categoryRoutes from './routes/category.routes'
 import cartRoutes from './routes/cart.routes'
@@ -30,10 +31,6 @@ app.use(
 app.get('/health', (_req, res) => {
   res.json({ success: true, data: { ok: true, service: 'hacedor-3d-api' } })
 })
-
-const authRoutes = express.Router()
-authRoutes.post('/register', placeholder('POST /api/auth/register'))
-authRoutes.post('/login', placeholder('POST /api/auth/login'))
 
 const supplierRoutes = express.Router()
 supplierRoutes.get('/', placeholder('GET /api/suppliers [ADMIN]'))
