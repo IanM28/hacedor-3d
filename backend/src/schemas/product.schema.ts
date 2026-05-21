@@ -14,6 +14,9 @@ export const createProductSchema = z.object({
   supplierId: z.string().uuid('supplierId debe ser un UUID válido'),
   supplierCost: z.number().positive().optional(),
   markupPercent: z.number().min(0).optional(),
+  printHours: z.number().min(0).optional(),
+  filamentGrams: z.number().min(0).optional(),
+  profitMultiplier: z.number().min(0).optional(),
 })
 
 export const updateProductSchema = createProductSchema

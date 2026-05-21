@@ -30,6 +30,9 @@ export interface Product {
   supplier: Supplier
   supplierCost?: number
   markupPercent?: number
+  printHours?: number | null
+  filamentGrams?: number | null
+  profitMultiplier?: number | null
   createdAt?: string
 }
 
@@ -109,6 +112,34 @@ export interface OrderItem {
   quantity: number
   unitPrice: number
   product?: Product
+}
+
+export interface DashboardStats {
+  totalClients: number
+  monthlySales: number
+  totalAmount: number
+  activeProducts: number
+  netProfit: number
+  titheAmount: number
+  isProfitEstimated: boolean
+}
+
+export interface DashboardSaleUser {
+  id: string
+  email: string
+  name: string
+  lastName: string
+}
+
+export interface DashboardSale {
+  id: string
+  guestEmail: string | null
+  contactName: string
+  total: number
+  status: OrderStatus
+  paymentMethod: PaymentMethod
+  createdAt: string
+  user: DashboardSaleUser | null
 }
 
 export interface Order {

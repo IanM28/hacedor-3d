@@ -55,9 +55,12 @@ model Product {
   isFeatured    Boolean  @default(false)
   categoryId    String
   supplierId    String
-  supplierCost  Float?
-  markupPercent Float?   @default(40)
-  createdAt     DateTime @default(now())
+  supplierCost      Float?
+  markupPercent     Float?   @default(40)
+  printHours        Float?
+  filamentGrams     Float?
+  profitMultiplier  Float?   @default(8)
+  createdAt         DateTime @default(now())
 
   category   Category   @relation(fields: [categoryId], references: [id])
   supplier   Supplier   @relation(fields: [supplierId], references: [id])

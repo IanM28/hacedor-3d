@@ -10,6 +10,7 @@ import categoryRoutes from './routes/category.routes'
 import cartRoutes from './routes/cart.routes'
 import orderRoutes from './routes/order.routes'
 import paymentRoutes from './routes/payment.routes'
+import dashboardRoutes from './routes/dashboard.routes'
 
 export const app = express()
 
@@ -38,9 +39,6 @@ supplierRoutes.post('/', placeholder('POST /api/suppliers [ADMIN]'))
 supplierRoutes.put('/:id', placeholder('PUT /api/suppliers/:id [ADMIN]'))
 supplierRoutes.delete('/:id', placeholder('DELETE /api/suppliers/:id [ADMIN]'))
 
-const dashboardRoutes = express.Router()
-dashboardRoutes.get('/stats', placeholder('GET /api/dashboard/stats [ADMIN]'))
-dashboardRoutes.get('/sales', placeholder('GET /api/dashboard/sales [ADMIN]'))
 
 app.use('/api/auth', authRoutes)
 app.use('/api/products', productRoutes)
