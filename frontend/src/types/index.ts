@@ -46,6 +46,26 @@ export interface CartItem {
   stock: number
 }
 
+export interface CreateProductInput {
+  code: string
+  name: string
+  description: string
+  price: number
+  stock: number
+  images: string[]
+  isActive?: boolean
+  isFeatured?: boolean
+  categoryId: string
+  supplierId: string
+  supplierCost?: number
+  markupPercent?: number
+  printHours?: number
+  filamentGrams?: number
+  profitMultiplier?: number
+}
+
+export type UpdateProductInput = Partial<CreateProductInput>
+
 export interface ProductFilters {
   category?: string
   search?: string

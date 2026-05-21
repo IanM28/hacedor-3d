@@ -9,6 +9,7 @@ interface ProductFilters {
   search?: string
   featured?: string
   code?: string
+  includeInactive?: boolean
 }
 
 function notFound(): Error {
@@ -25,10 +26,10 @@ function isDuplicateCode(error: unknown): boolean {
 }
 
 export const productService = {
-  async findAll({ category, search, featured, code }: ProductFilters) {
+  async findAll({ category, search, featured, code, includeInactive }: ProductFilters) {
     return prisma.product.findMany({
       where: {
-        isActive: true,
+        ...(includeInactive ? {} : { isActive: true }),
         ...(category && { category: { slug: category } }),
         ...(search && {
           OR: [
@@ -65,12 +66,14 @@ export const productService = {
   },
 
   async update(id: string, data: UpdateProductInput) {
-    await productService.findById(id)
+    const existing = await prisma.product.findUnique({ where: { id } })
+    if (!existing) throw notFound()
     return prisma.product.update({ where: { id }, data, include })
   },
 
   async remove(id: string) {
-    await productService.findById(id)
+    const existing = await prisma.product.findUnique({ where: { id } })
+    if (!existing) throw notFound()
     await prisma.product.update({ where: { id }, data: { isActive: false } })
   },
 }

@@ -3,12 +3,14 @@ import { productService } from '../services/product.service'
 
 export const getProducts = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { category, search, featured, code } = req.query
+    const { category, search, featured, code, includeInactive } = req.query
+    const isAdmin = req.user?.role === 'ADMIN'
     const data = await productService.findAll({
       category: typeof category === 'string' ? category : undefined,
       search: typeof search === 'string' ? search : undefined,
       featured: typeof featured === 'string' ? featured : undefined,
       code: typeof code === 'string' ? code : undefined,
+      includeInactive: isAdmin && includeInactive === 'true',
     })
     res.json({ success: true, data })
   } catch (error) {

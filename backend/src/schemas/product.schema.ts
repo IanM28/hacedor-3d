@@ -9,6 +9,7 @@ export const createProductSchema = z.object({
   price: z.number().positive('El precio debe ser positivo'),
   stock: z.number().int().min(0, 'El stock mínimo es 0'),
   images: z.array(z.string()).default([]),
+  isActive: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
   categoryId: z.string().uuid('categoryId debe ser un UUID válido'),
   supplierId: z.string().uuid('supplierId debe ser un UUID válido'),

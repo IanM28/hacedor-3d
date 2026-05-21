@@ -9,3 +9,11 @@ export function useProducts(filters?: ProductFilters) {
     staleTime: 1000 * 60 * 5,
   })
 }
+
+export function useAdminProducts() {
+  return useQuery({
+    queryKey: ['admin', 'products'],
+    queryFn: () => productService.findAllAdmin(),
+    staleTime: 1000 * 60 * 2,
+  })
+}
