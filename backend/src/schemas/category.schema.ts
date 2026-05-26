@@ -2,11 +2,11 @@ import { z } from 'zod'
 
 export const createCategorySchema = z.object({
   name: z.string().min(2, 'Nombre mínimo 2 caracteres'),
-  slug: z
+  colorHex: z
     .string()
-    .min(2, 'Slug mínimo 2 caracteres')
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug debe ser lowercase/kebab-case'),
-  description: z.string().optional(),
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Color HEX inválido')
+    .optional(),
+  isActive: z.boolean().optional(),
 })
 
 export const updateCategorySchema = createCategorySchema

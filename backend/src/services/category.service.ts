@@ -15,10 +15,28 @@ function isDuplicateSlug(error: unknown): boolean {
   )
 }
 
+function generateSlug(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 export const categoryService = {
   async findAll() {
     return prisma.category.findMany({
       where: { isActive: true },
+      orderBy: { name: 'asc' },
+    })
+  },
+
+  async findAllAdmin() {
+    return prisma.category.findMany({
       orderBy: { name: 'asc' },
     })
   },
@@ -30,23 +48,61 @@ export const categoryService = {
   },
 
   async create(data: CreateCategoryInput) {
+    const slug = generateSlug(data.name)
     try {
-      return await prisma.category.create({ data })
+      return await prisma.category.create({
+        data: {
+          name: data.name,
+          slug,
+          colorHex: data.colorHex ?? '#4A7C59',
+          isActive: data.isActive ?? true,
+        },
+      })
     } catch (error) {
       if (isDuplicateSlug(error)) {
-        throw Object.assign(new Error(`El slug "${data.slug}" ya existe`), { statusCode: 409 })
+        throw Object.assign(new Error(`El slug "${slug}" ya existe`), { statusCode: 409 })
       }
       throw error
     }
   },
 
   async update(id: string, data: UpdateCategoryInput) {
-    await categoryService.findById(id)
-    return prisma.category.update({ where: { id }, data })
+    const existing = await prisma.category.findUnique({ where: { id } })
+    if (!existing) throw notFound()
+
+    const updateData: Prisma.CategoryUpdateInput = {}
+    if (data.name !== undefined) {
+      updateData.name = data.name
+      updateData.slug = generateSlug(data.name)
+    }
+    if (data.colorHex !== undefined) updateData.colorHex = data.colorHex
+    if (data.isActive !== undefined) updateData.isActive = data.isActive
+
+    try {
+      return await prisma.category.update({ where: { id }, data: updateData })
+    } catch (error) {
+      if (isDuplicateSlug(error)) {
+        throw Object.assign(
+          new Error(`El slug "${updateData.slug as string}" ya existe`),
+          { statusCode: 409 },
+        )
+      }
+      throw error
+    }
   },
 
   async remove(id: string) {
-    await categoryService.findById(id)
+    const existing = await prisma.category.findUnique({ where: { id } })
+    if (!existing) throw notFound()
     await prisma.category.update({ where: { id }, data: { isActive: false } })
+  },
+
+  async toggleActive(id: string) {
+    const existing = await prisma.category.findUnique({ where: { id } })
+    if (!existing) throw notFound()
+    return prisma.category.update({
+      where: { id },
+      data: { isActive: !existing.isActive },
+    })
   },
 }

@@ -1,9 +1,16 @@
 import type { NextFunction, Request, Response } from 'express'
 import { categoryService } from '../services/category.service'
 
-export const getCategories = async (_req: Request, res: Response, next: NextFunction) => {
+export const getCategories = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const data = await categoryService.findAll()
+    const isAdmin = req.user?.role === 'ADMIN'
+    const includeInactive = req.query.includeInactive === 'true'
+
+    const data =
+      isAdmin && includeInactive
+        ? await categoryService.findAllAdmin()
+        : await categoryService.findAll()
+
     res.json({ success: true, data })
   } catch (error) {
     next(error)

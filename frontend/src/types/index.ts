@@ -3,18 +3,32 @@ export interface Category {
   name: string
   slug: string
   description?: string
+  colorHex?: string | null
   isActive: boolean
 }
 
 export interface Supplier {
   id: string
   name: string
-  email: string
-  phone?: string
-  address?: string
-  cbu?: string
+  contactUrl?: string | null
   isActive: boolean
 }
+
+export interface CreateCategoryInput {
+  name: string
+  colorHex?: string
+  isActive?: boolean
+}
+
+export type UpdateCategoryInput = Partial<CreateCategoryInput>
+
+export interface CreateSupplierInput {
+  name: string
+  contactUrl?: string
+  isActive?: boolean
+}
+
+export type UpdateSupplierInput = Partial<CreateSupplierInput>
 
 export interface Filament {
   id: string

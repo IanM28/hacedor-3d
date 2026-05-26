@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { authenticate, requireAdmin } from '../middlewares/auth'
+import { authenticate, authOptional, requireAdmin } from '../middlewares/auth'
 import { validate } from '../middlewares/validate'
 import { createCategorySchema, updateCategorySchema } from '../schemas/category.schema'
 import {
@@ -12,7 +12,7 @@ import {
 
 const router = Router()
 
-router.get('/', getCategories)
+router.get('/', authOptional, getCategories)
 router.get('/:id', getCategory)
 router.post('/', authenticate, requireAdmin, validate(createCategorySchema), createCategory)
 router.put('/:id', authenticate, requireAdmin, validate(updateCategorySchema), updateCategory)

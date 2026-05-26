@@ -26,19 +26,21 @@ model Category {
   name        String
   slug        String   @unique
   description String?
+  colorHex    String?  @default("#4A7C59")
   isActive    Boolean  @default(true)
 
   products Product[]
 }
 
 model Supplier {
-  id       String   @id @default(uuid())
-  name     String
-  email    String
-  phone    String?
-  address  String?
-  cbu      String?
-  isActive Boolean  @default(true)
+  id         String  @id @default(uuid())
+  name       String
+  contactUrl String?
+  email      String?
+  phone      String?
+  address    String?
+  cbu        String?
+  isActive   Boolean @default(true)
 
   products Product[]
 }
