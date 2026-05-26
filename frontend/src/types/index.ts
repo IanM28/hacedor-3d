@@ -16,6 +16,36 @@ export interface Supplier {
   isActive: boolean
 }
 
+export interface Filament {
+  id: string
+  brandName: string
+  material: string
+  colorName: string
+  colorHex?: string | null
+  pricePerKg: number
+  isActive: boolean
+  createdAt?: string
+}
+
+export interface ProductFilamentUsage {
+  id: string
+  productId: string
+  filamentId: string
+  grams: number
+  filament: Filament
+}
+
+export interface CreateFilamentInput {
+  brandName: string
+  material: string
+  colorName: string
+  colorHex?: string
+  pricePerKg: number
+  isActive?: boolean
+}
+
+export type UpdateFilamentInput = Partial<CreateFilamentInput>
+
 export interface Product {
   id: string
   code: string
@@ -27,12 +57,13 @@ export interface Product {
   isActive: boolean
   isFeatured: boolean
   category: Category
-  supplier: Supplier
+  supplier?: Supplier | null
   supplierCost?: number
   markupPercent?: number
   printHours?: number | null
   filamentGrams?: number | null
   profitMultiplier?: number | null
+  filamentUsages?: ProductFilamentUsage[]
   createdAt?: string
 }
 
@@ -46,6 +77,11 @@ export interface CartItem {
   stock: number
 }
 
+export interface FilamentUsageInput {
+  filamentId: string
+  grams: number
+}
+
 export interface CreateProductInput {
   code: string
   name: string
@@ -56,12 +92,13 @@ export interface CreateProductInput {
   isActive?: boolean
   isFeatured?: boolean
   categoryId: string
-  supplierId: string
+  supplierId?: string
   supplierCost?: number
   markupPercent?: number
   printHours?: number
   filamentGrams?: number
   profitMultiplier?: number
+  filamentUsages?: FilamentUsageInput[]
 }
 
 export type UpdateProductInput = Partial<CreateProductInput>

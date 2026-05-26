@@ -2,7 +2,11 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '../prisma/client'
 import type { CreateProductInput, UpdateProductInput } from '../schemas/product.schema'
 
-const include = { category: true, supplier: true } satisfies Prisma.ProductInclude
+const include = {
+  category: true,
+  supplier: true,
+  filamentUsages: { include: { filament: true } },
+} satisfies Prisma.ProductInclude
 
 interface ProductFilters {
   category?: string
@@ -55,8 +59,22 @@ export const productService = {
   },
 
   async create(data: CreateProductInput) {
+    const { filamentUsages, ...productData } = data
     try {
-      return await prisma.product.create({ data, include })
+      return await prisma.product.create({
+        data: {
+          ...productData,
+          ...(filamentUsages && filamentUsages.length > 0 && {
+            filamentUsages: {
+              create: filamentUsages.map(u => ({
+                filamentId: u.filamentId,
+                grams: u.grams,
+              })),
+            },
+          }),
+        },
+        include,
+      })
     } catch (error) {
       if (isDuplicateCode(error)) {
         throw Object.assign(new Error(`El código ${data.code} ya existe`), { statusCode: 409 })
@@ -68,7 +86,29 @@ export const productService = {
   async update(id: string, data: UpdateProductInput) {
     const existing = await prisma.product.findUnique({ where: { id } })
     if (!existing) throw notFound()
-    return prisma.product.update({ where: { id }, data, include })
+
+    const { filamentUsages, ...productData } = data
+
+    return prisma.$transaction(async tx => {
+      if (filamentUsages !== undefined) {
+        await tx.productFilamentUsage.deleteMany({ where: { productId: id } })
+        if (filamentUsages.length > 0) {
+          await tx.productFilamentUsage.createMany({
+            data: filamentUsages.map(u => ({
+              productId: id,
+              filamentId: u.filamentId,
+              grams: u.grams,
+            })),
+          })
+        }
+      }
+
+      return tx.product.update({
+        where: { id },
+        data: productData,
+        include,
+      })
+    })
   },
 
   async remove(id: string) {

@@ -1,5 +1,10 @@
 import { z } from 'zod'
 
+const filamentUsageSchema = z.object({
+  filamentId: z.string().uuid('filamentId debe ser un UUID válido'),
+  grams: z.number().positive('Los gramos deben ser positivos'),
+})
+
 export const createProductSchema = z.object({
   code: z
     .string()
@@ -12,12 +17,13 @@ export const createProductSchema = z.object({
   isActive: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
   categoryId: z.string().uuid('categoryId debe ser un UUID válido'),
-  supplierId: z.string().uuid('supplierId debe ser un UUID válido'),
+  supplierId: z.string().uuid('supplierId debe ser un UUID válido').optional(),
   supplierCost: z.number().positive().optional(),
   markupPercent: z.number().min(0).optional(),
   printHours: z.number().min(0).optional(),
   filamentGrams: z.number().min(0).optional(),
   profitMultiplier: z.number().min(0).optional(),
+  filamentUsages: z.array(filamentUsageSchema).optional(),
 })
 
 export const updateProductSchema = createProductSchema

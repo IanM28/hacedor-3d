@@ -13,6 +13,8 @@ import Register from './pages/Auth/Register'
 import AdminLayout from './pages/Admin/AdminLayout'
 import AdminDashboard from './pages/Admin/Dashboard'
 import AdminProducts from './pages/Admin/Products'
+import AdminFilaments from './pages/Admin/Filaments'
+import AdminCalculator from './pages/Admin/Calculator'
 
 function PublicLayout() {
   return (
@@ -56,7 +58,8 @@ export function App() {
         <Route index element={<AdminDashboard />} />
         <Route path="productos" element={<AdminProducts />} />
         <Route path="categorias" element={<AdminPlaceholder title="Categorías" />} />
-        <Route path="proveedores" element={<AdminPlaceholder title="Proveedores" />} />
+        <Route path="filamentos" element={<AdminFilaments />} />
+        <Route path="calculadora" element={<AdminCalculator />} />
         <Route path="pedidos" element={<AdminPlaceholder title="Pedidos" />} />
       </Route>
 

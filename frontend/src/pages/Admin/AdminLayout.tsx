@@ -3,11 +3,12 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   ArrowLeft,
   BarChart2,
+  Calculator,
+  FlaskConical,
   Menu,
   Package,
   ShoppingBag,
   Tag,
-  Truck,
   X,
 } from 'lucide-react'
 import AdminRoute from '../../components/layout/AdminRoute'
@@ -16,7 +17,8 @@ const NAV_ITEMS = [
   { to: '/admin', label: 'Dashboard', icon: BarChart2, end: true },
   { to: '/admin/productos', label: 'Productos', icon: Package, end: false },
   { to: '/admin/categorias', label: 'Categorías', icon: Tag, end: false },
-  { to: '/admin/proveedores', label: 'Proveedores', icon: Truck, end: false },
+  { to: '/admin/filamentos', label: 'Filamentos', icon: FlaskConical, end: false },
+  { to: '/admin/calculadora', label: 'Calculadora', icon: Calculator, end: false },
   { to: '/admin/pedidos', label: 'Pedidos', icon: ShoppingBag, end: false },
 ]
 

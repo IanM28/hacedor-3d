@@ -9,12 +9,18 @@ const COSTING_CONFIG = {
   defaultProfitMultiplier: 8,
 } as const
 
+export interface FilamentUsageInput {
+  grams: number
+  pricePerKg: number
+}
+
 export interface ProductCostInput {
   printHours?: number | null
   filamentGrams?: number | null
   profitMultiplier?: number | null
   supplierCost?: number | null
   salePrice: number
+  filamentUsages?: FilamentUsageInput[]
 }
 
 export interface ProductCostResult {
@@ -37,6 +43,7 @@ export interface OrderItemProfitInput {
     filamentGrams?: number | null
     profitMultiplier?: number | null
     supplierCost?: number | null
+    filamentUsages?: FilamentUsageInput[]
   }
 }
 
@@ -56,10 +63,26 @@ export interface OrderProfitResult {
   isEstimated: boolean
 }
 
+function calcMaterialCost(
+  filamentGrams: number | null | undefined,
+  filamentUsages: FilamentUsageInput[] | undefined,
+): number {
+  if (filamentUsages && filamentUsages.length > 0) {
+    return filamentUsages.reduce((sum, u) => sum + u.grams * (u.pricePerKg / 1000), 0)
+  }
+  if (filamentGrams != null) {
+    return filamentGrams * (COSTING_CONFIG.filamentKgPrice / 1000)
+  }
+  return 0
+}
+
 export function calculateProductCost(input: ProductCostInput): ProductCostResult {
-  const { printHours, filamentGrams, profitMultiplier, supplierCost, salePrice } = input
+  const { printHours, filamentGrams, profitMultiplier, supplierCost, salePrice, filamentUsages } =
+    input
   const multiplier = profitMultiplier ?? COSTING_CONFIG.defaultProfitMultiplier
-  const hasPrintData = printHours != null && filamentGrams != null
+
+  const hasMultiMaterial = filamentUsages && filamentUsages.length > 0
+  const hasPrintData = printHours != null && (filamentGrams != null || hasMultiMaterial)
 
   if (!hasPrintData) {
     const realManufacturingCost = supplierCost ?? 0
@@ -78,9 +101,10 @@ export function calculateProductCost(input: ProductCostInput): ProductCostResult
     }
   }
 
-  const materialCost = filamentGrams * (COSTING_CONFIG.filamentKgPrice / 1000)
-  const electricityCost = printHours * (COSTING_CONFIG.printerConsumptionW / 1000) * COSTING_CONFIG.kwhPrice
-  const wearCost = printHours * (COSTING_CONFIG.replacementPartsPrice / COSTING_CONFIG.usefulLifeHours)
+  const hours = printHours!
+  const materialCost = calcMaterialCost(filamentGrams, filamentUsages)
+  const electricityCost = hours * (COSTING_CONFIG.printerConsumptionW / 1000) * COSTING_CONFIG.kwhPrice
+  const wearCost = hours * (COSTING_CONFIG.replacementPartsPrice / COSTING_CONFIG.usefulLifeHours)
   const errorMargin = (materialCost + electricityCost + wearCost) * COSTING_CONFIG.errorMarginPercent
   const realManufacturingCost = materialCost + electricityCost + wearCost + errorMargin
   const suggestedSalePrice = realManufacturingCost * multiplier
@@ -106,6 +130,7 @@ export function calculateOrderItemProfit(input: OrderItemProfitInput): OrderItem
     filamentGrams: input.product.filamentGrams,
     profitMultiplier: input.product.profitMultiplier,
     supplierCost: input.product.supplierCost,
+    filamentUsages: input.product.filamentUsages,
     salePrice: input.unitPrice,
   })
 

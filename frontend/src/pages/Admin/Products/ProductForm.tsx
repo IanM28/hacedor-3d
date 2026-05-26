@@ -1,15 +1,16 @@
-import { useState, useMemo } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, X } from 'lucide-react'
+import { Loader2, Upload, X } from 'lucide-react'
 import Input from '../../../components/ui/Input'
 import Button from '../../../components/ui/Button'
 import { useCategories } from '../../../hooks/useCategories'
-import { useSuppliers } from '../../../hooks/useSuppliers'
+import { useFilaments } from '../../../hooks/useFilaments'
+import { uploadService } from '../../../services/upload.service'
+import Calculator3D, { type MaterialRow } from '../../../components/admin/Calculator3D'
 import type { CreateProductInput, Product, UpdateProductInput } from '../../../types'
 
-// z.coerce.number() handles string→number conversion from HTML inputs
 const optNum = z.coerce.number().min(0).optional()
 
 const schema = z.object({
@@ -19,58 +20,14 @@ const schema = z.object({
   price: z.coerce.number().positive('Precio debe ser positivo'),
   stock: z.coerce.number().int().min(0, 'Stock mínimo 0'),
   categoryId: z.string().uuid('Seleccioná una categoría'),
-  supplierId: z.string().uuid('Seleccioná un proveedor'),
   isActive: z.boolean(),
   isFeatured: z.boolean(),
-  supplierCost: optNum,
-  markupPercent: optNum,
   printHours: optNum,
-  filamentGrams: optNum,
   profitMultiplier: optNum,
 })
 
 type FormValues = z.infer<typeof schema>
 
-const COSTS = {
-  filamentKgPrice: 20000,
-  kwhPrice: 140,
-  printerW: 120,
-  usefulH: 4320,
-  partsPrice: 15000,
-  errorMargin: 0.3,
-  tithe: 0.1,
-  defaultMultiplier: 8,
-} as const
-
-function calcPreview(v: Partial<FormValues>) {
-  // treat 0 as "not set" for print fields
-  const h = v.printHours && v.printHours > 0 ? v.printHours : undefined
-  const g = v.filamentGrams && v.filamentGrams > 0 ? v.filamentGrams : undefined
-  const m = v.profitMultiplier && v.profitMultiplier > 0 ? v.profitMultiplier : COSTS.defaultMultiplier
-  const sc = v.supplierCost ?? 0
-  const p = v.price ?? 0
-
-  if (!h || !g) {
-    const net = p - sc
-    return { cost: sc, suggested: sc * m, net, tithe: net * COSTS.tithe, estimated: true }
-  }
-  const mat = g * (COSTS.filamentKgPrice / 1000)
-  const elec = h * (COSTS.printerW / 1000) * COSTS.kwhPrice
-  const wear = h * (COSTS.partsPrice / COSTS.usefulH)
-  const err = (mat + elec + wear) * COSTS.errorMargin
-  const cost = mat + elec + wear + err
-  const net = p - cost
-  return { cost, suggested: cost * m, net, tithe: net * COSTS.tithe, estimated: false }
-}
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    maximumFractionDigits: 0,
-  }).format(n)
-
-// Convert 0 optional numbers to undefined so API/Prisma treats them as "not set"
 const cleanOpt = (v: number | undefined) => (v === 0 || v === undefined ? undefined : v)
 
 interface ProductFormProps {
@@ -81,10 +38,16 @@ interface ProductFormProps {
 
 export default function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProps) {
   const { data: categories = [] } = useCategories()
-  const { data: suppliers = [] } = useSuppliers()
-  // Images managed outside RHF schema to avoid type complexity
+  const { data: filaments = [] } = useFilaments()
+
   const [images, setImages] = useState<string[]>(product?.images ?? [])
-  const [imageUrl, setImageUrl] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const initialMaterialRows: MaterialRow[] =
+    product?.filamentUsages?.map(u => ({ filamentId: u.filamentId, grams: u.grams })) ?? []
+  const [materialRows, setMaterialRows] = useState<MaterialRow[]>(initialMaterialRows)
 
   const {
     register,
@@ -102,42 +65,45 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
           price: product.price,
           stock: product.stock,
           categoryId: product.category.id,
-          supplierId: product.supplier.id,
           isActive: product.isActive,
           isFeatured: product.isFeatured,
-          supplierCost: product.supplierCost ?? undefined,
-          markupPercent: product.markupPercent ?? undefined,
           printHours: product.printHours ?? undefined,
-          filamentGrams: product.filamentGrams ?? undefined,
           profitMultiplier: product.profitMultiplier ?? undefined,
         }
       : { isActive: true, isFeatured: false, stock: 0 },
   })
 
-  const watched = watch()
-  const preview = useMemo(() => calcPreview(watched), [watched])
-  const showPreview = (watched.printHours ?? 0) > 0 || (watched.filamentGrams ?? 0) > 0 || (watched.supplierCost ?? 0) > 0
+  const currentPrice = watch('price')
+  const currentPrintHours = watch('printHours') ?? 0
+  const currentMultiplier = watch('profitMultiplier') ?? 0
 
-  const addImage = () => {
-    const url = imageUrl.trim()
-    if (!url) return
-    setImages(prev => [...prev, url])
-    setImageUrl('')
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError(null)
+    setUploading(true)
+    try {
+      const url = await uploadService.uploadProductImage(file)
+      setImages(prev => [...prev, url])
+    } catch {
+      setUploadError('Error al subir imagen. Verificá Cloudinary.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
-  const removeImage = (idx: number) => {
+  function removeImage(idx: number) {
     setImages(prev => prev.filter((_, i) => i !== idx))
   }
 
-  const handleFormSubmit = (values: FormValues) => {
+  function handleFormSubmit(values: FormValues) {
     const payload: CreateProductInput = {
       ...values,
       images,
-      supplierCost: cleanOpt(values.supplierCost),
-      markupPercent: cleanOpt(values.markupPercent),
       printHours: cleanOpt(values.printHours),
-      filamentGrams: cleanOpt(values.filamentGrams),
       profitMultiplier: cleanOpt(values.profitMultiplier),
+      filamentUsages: materialRows.filter(r => r.filamentId && r.grams > 0),
     }
     onSubmit(payload)
   }
@@ -171,46 +137,38 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Input label="Precio (ARS)" type="number" step="0.01" error={errors.price?.message} {...register('price')} />
-        <Input label="Stock" type="number" step="1" error={errors.stock?.message} {...register('stock')} />
+        <Input
+          label="Precio (ARS)"
+          type="number"
+          step="0.01"
+          error={errors.price?.message}
+          {...register('price')}
+        />
+        <Input
+          label="Stock"
+          type="number"
+          step="1"
+          error={errors.stock?.message}
+          {...register('stock')}
+        />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[var(--color-text-primary)]">Categoría</label>
-          <select
-            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
-            {...register('categoryId')}
-          >
-            <option value="">Seleccioná...</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-          {errors.categoryId && (
-            <p className="text-xs text-[var(--color-red)]">{errors.categoryId.message}</p>
-          )}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-[var(--color-text-primary)]">Proveedor</label>
-          <select
-            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
-            {...register('supplierId')}
-          >
-            <option value="">Seleccioná...</option>
-            {suppliers.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-          {errors.supplierId && (
-            <p className="text-xs text-[var(--color-red)]">{errors.supplierId.message}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Input label="Costo proveedor" type="number" step="0.01" {...register('supplierCost')} />
-        <Input label="Markup %" type="number" step="0.1" {...register('markupPercent')} />
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-[var(--color-text-primary)]">Categoría</label>
+        <select
+          className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
+          {...register('categoryId')}
+        >
+          <option value="">Seleccioná...</option>
+          {categories.map(c => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        {errors.categoryId && (
+          <p className="text-xs text-[var(--color-red)]">{errors.categoryId.message}</p>
+        )}
       </div>
 
       <div className="flex gap-4">
@@ -227,24 +185,37 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
       {/* Images */}
       <div className="space-y-2">
         <p className="text-sm font-medium text-[var(--color-text-primary)]">Imágenes</p>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-2 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-secondary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-text-primary)] disabled:opacity-50"
+          >
+            {uploading ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Subiendo...
+              </>
+            ) : (
+              <>
+                <Upload size={14} />
+                Subir imagen
+              </>
+            )}
+          </button>
           <input
-            type="text"
-            placeholder="https://..."
-            value={imageUrl}
-            onChange={e => setImageUrl(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                addImage()
-              }
-            }}
-            className="flex-1 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] placeholder:text-[var(--color-text-muted)]"
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleFileChange}
           />
-          <Button type="button" size="sm" variant="secondary" onClick={addImage} leftIcon={<Plus size={14} />}>
-            Agregar
-          </Button>
+          <span className="text-xs text-[var(--color-text-muted)]">JPG, PNG o WebP · máx. 5 MB</span>
         </div>
+        {uploadError && (
+          <p className="text-xs text-[var(--color-red)]">{uploadError}</p>
+        )}
         {images.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {images.map((url, i) => (
@@ -267,43 +238,55 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
         )}
       </div>
 
-      {/* Calculadora 3D */}
-      <div className="rounded-md border border-[var(--color-border-light)] bg-[var(--color-surface-2)] p-4 space-y-3">
-        <p className="text-xs font-medium uppercase tracking-widest text-[var(--color-accent)]">
-          Calculadora 3D
-        </p>
-        <div className="grid grid-cols-3 gap-3">
-          <Input label="Hs. impresión" type="number" step="0.1" min="0" {...register('printHours')} />
-          <Input label="Gs. filamento" type="number" step="0.1" min="0" {...register('filamentGrams')} />
-          <Input label="Multiplicador" type="number" step="0.1" min="0" placeholder="8" {...register('profitMultiplier')} />
-        </div>
-        {showPreview && (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs pt-1">
-            <span className="text-[var(--color-text-secondary)]">Costo fabricación:</span>
-            <span className="font-mono text-[var(--color-text-primary)]">{fmt(preview.cost)}</span>
-            <span className="text-[var(--color-text-secondary)]">Precio sugerido:</span>
-            <span className="flex items-center gap-2">
-              <span className="font-mono text-[var(--color-accent)]">{fmt(preview.suggested)}</span>
-              <button
-                type="button"
-                onClick={() => setValue('price', Math.round(preview.suggested))}
-                className="text-[10px] underline text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-              >
-                Usar
-              </button>
-            </span>
-            <span className="text-[var(--color-text-secondary)]">Ganancia neta:</span>
-            <span className="font-mono text-[var(--color-text-primary)]">{fmt(preview.net)}</span>
-            <span className="text-[var(--color-text-secondary)]">Diezmo:</span>
-            <span className="font-mono text-[var(--color-text-primary)]">{fmt(preview.tithe)}</span>
-            {preview.estimated && (
-              <span className="col-span-2 text-[10px] text-orange-400 mt-0.5">
-                Estimado — sin datos de impresión completos
-              </span>
-            )}
-          </div>
-        )}
+      {/* 3D Calculator with multi-material */}
+      <Calculator3D
+        filaments={filaments}
+        initialPrintHours={currentPrintHours}
+        initialMultiplier={currentMultiplier}
+        initialSalePrice={currentPrice}
+        initialMaterialRows={materialRows}
+        onSuggestedPrice={price => setValue('price', price)}
+        onMaterialRowsChange={setMaterialRows}
+      />
+
+      {/* Hidden print hours & multiplier fields synced via Calculator */}
+      <div className="grid grid-cols-2 gap-3">
+        <Input
+          label="Hs. impresión"
+          type="number"
+          step="0.1"
+          min="0"
+          {...register('printHours')}
+        />
+        <Input
+          label="Multiplicador ganancia"
+          type="number"
+          step="0.5"
+          min="0"
+          placeholder="8"
+          {...register('profitMultiplier')}
+        />
       </div>
+
+      {/* Material rows synced from Calculator */}
+      {materialRows.length > 0 && (
+        <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-3 space-y-1">
+          <p className="text-xs font-medium uppercase tracking-widest text-[var(--color-text-muted)] mb-2">
+            Materiales asignados
+          </p>
+          {materialRows.map((row, idx) => {
+            const f = filaments.find(x => x.id === row.filamentId)
+            return (
+              <div key={idx} className="flex items-center justify-between text-xs">
+                <span className="text-[var(--color-text-secondary)]">
+                  {f ? `${f.colorName} — ${f.brandName} (${f.material})` : row.filamentId}
+                </span>
+                <span className="font-mono text-[var(--color-text-primary)]">{row.grams}g</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <div className="flex justify-end gap-3 pt-2">
         <Button type="submit" isLoading={isSubmitting}>

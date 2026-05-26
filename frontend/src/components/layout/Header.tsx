@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Menu, ShoppingCart, X } from 'lucide-react'
+import { LayoutDashboard, Menu, ShoppingCart, X } from 'lucide-react'
 import { useCartStore } from '../../store/cartStore'
 import { useAuthStore } from '../../store/authStore'
 
@@ -77,10 +77,20 @@ export default function Header() {
                   {user?.name}
                 </button>
                 {dropdownOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-44 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-lg">
+                  <div className="absolute right-0 top-full mt-1 w-48 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] py-1 shadow-lg">
                     <span className="block px-3 py-2 font-body text-xs text-[var(--color-text-muted)]">
                       Mi cuenta
                     </span>
+                    {user?.role === 'ADMIN' && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2 w-full px-3 py-2 font-body text-sm text-[var(--color-accent)] transition-colors hover:bg-[var(--color-surface-2)]"
+                      >
+                        <LayoutDashboard size={14} />
+                        Panel Admin
+                      </Link>
+                    )}
                     <button
                       type="button"
                       onClick={handleLogout}
@@ -125,13 +135,25 @@ export default function Header() {
             </Link>
           ))}
           {isAuthenticated() ? (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="block w-full py-3 text-left font-body text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-            >
-              Cerrar sesión
-            </button>
+            <>
+              {user?.role === 'ADMIN' && (
+                <Link
+                  to="/admin"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 py-3 font-body text-sm text-[var(--color-accent)]"
+                >
+                  <LayoutDashboard size={14} />
+                  Panel Admin
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="block w-full py-3 text-left font-body text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+              >
+                Cerrar sesión
+              </button>
+            </>
           ) : (
             <Link
               to="/login"

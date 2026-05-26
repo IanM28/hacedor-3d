@@ -43,6 +43,29 @@ model Supplier {
   products Product[]
 }
 
+model Filament {
+  id          String   @id @default(uuid())
+  brandName   String
+  material    String
+  colorName   String
+  colorHex    String?
+  pricePerKg  Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  productUsages ProductFilamentUsage[]
+}
+
+model ProductFilamentUsage {
+  id         String @id @default(uuid())
+  productId  String
+  filamentId String
+  grams      Float
+
+  product  Product  @relation(fields: [productId], references: [id])
+  filament Filament @relation(fields: [filamentId], references: [id])
+}
+
 model Product {
   id            String   @id @default(uuid())
   code          String   @unique
@@ -54,7 +77,7 @@ model Product {
   isActive      Boolean  @default(true)
   isFeatured    Boolean  @default(false)
   categoryId    String
-  supplierId    String
+  supplierId    String?
   supplierCost      Float?
   markupPercent     Float?   @default(40)
   printHours        Float?
@@ -62,10 +85,11 @@ model Product {
   profitMultiplier  Float?   @default(8)
   createdAt         DateTime @default(now())
 
-  category   Category   @relation(fields: [categoryId], references: [id])
-  supplier   Supplier   @relation(fields: [supplierId], references: [id])
-  orderItems OrderItem[]
-  cartItems  CartItem[]
+  category        Category               @relation(fields: [categoryId], references: [id])
+  supplier        Supplier?              @relation(fields: [supplierId], references: [id])
+  orderItems      OrderItem[]
+  cartItems       CartItem[]
+  filamentUsages  ProductFilamentUsage[]
 }
 
 model Cart {
