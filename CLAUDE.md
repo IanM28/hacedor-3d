@@ -558,11 +558,73 @@ WhatsAppButton:
 4. Guards de rutas protegidas
 
 ### FASE 5 — Panel Admin
-1. Layout dashboard con sidebar
-2. CRUD de Productos (con upload de imagenes)
-3. CRUD de Categorias y Proveedores
-4. Gestion de Pedidos con cambio de estado
-5. Dashboard con stats y grafico de ventas
+
+#### Hito 5.1 — Layout y Estructura del Dashboard ✅
+- Layout dashboard con sidebar y navegacion lateral
+- Routing admin protegido con guard de rol ADMIN
+- AdminLayout con slots para paginas internas
+
+#### Hito 5.2 — CRUD de Productos con Upload de Imagenes ✅
+- CRUD completo de productos (crear, editar, activar/desactivar)
+- Formulario ProductForm con React Hook Form + Zod
+- Upload de imagenes integrado en ProductForm
+
+#### Hito 5.3 — Core de Filamentos, Calculadora Multi-material e Integracion de Cloudinary ✅
+- Modelos Filament y ProductFilamentUsage en Prisma + migracion
+- API REST completa: GET /api/filaments, POST, PUT /:id, DELETE /:id
+- Pagina /admin/filamentos con CRUD visual de materiales
+- Componente Calculator3D.tsx multi-material con precios reales por filamento
+- Pagina independiente /admin/calculadora
+- Upload de imagenes via Cloudinary (upload.service.ts, upload.controller.ts, upload.middleware.ts)
+- Costing service actualizado con calculo real por kg de filamento
+- Link "Panel Admin" en dropdown del Header para usuarios ADMIN
+
+#### Hito 5.4 — Optimizacion de UX de Materiales e Imagenes 🔄
+Requerimientos:
+
+1. SELECTOR DE FILAMENTOS CON SWATCH DE COLOR ACTIVO
+   - En las listas Select de materiales (Calculator3D y ProductForm), mostrar junto al texto
+     "Nombre — Marca (Material)" un circulo solido pintado con colorHex del filamento.
+   - Si colorHex es null o vacio, mostrar circulo gris neutral (#6B7280) por defecto.
+   - El swatch debe ser visible tanto dentro de la opcion seleccionada como en el dropdown.
+   - Archivos: Calculator3D.tsx, ProductForm.tsx (seccion "Materiales asignados")
+
+2. SELECTOR DE COLOR INTERACTIVO (COLOR PICKER GRAFICO)
+   - En /admin/filamentos (FilamentForm), reemplazar el input de texto HEX por un combo:
+     - input type="color" estilizado (clase dark, borde verde on-focus, size cuadrado)
+     - input de texto mono sincronizado que muestra y acepta el codigo HEX generado
+   - Ambos deben operar de forma reactiva con setValue de React Hook Form.
+   - El color picker nativo debe abrir la paleta grafica del sistema operativo al hacer click.
+   - Archivo: frontend/src/pages/Admin/Filaments/index.tsx
+
+3. OPTIMIZACION Y CONTROL DEL LIMITE DE IMAGENES
+   - En ProductForm.tsx, antes de llamar a uploadService.uploadProductImage(file):
+     - Validar el tamano del archivo en el frontend: si supera 5 MB mostrar Toast de error
+       descriptivo ("Imagen demasiado grande. Maximo 5 MB.") y abortar sin llamar al backend.
+     - Si el servicio de upload falla (error de red, Cloudinary no configurado, etc.),
+       capturar el mensaje del error y mostrarlo via toast.error en lugar de solo guardarlo
+       en estado local (setUploadError).
+     - El componente debe seguir mostrando el mensaje inline debajo del boton como fallback.
+   - Archivo: frontend/src/pages/Admin/Products/ProductForm.tsx
+
+#### Hito 5.5 — CRUD de Categorias y Proveedores
+(desplazado desde Hito 5.3 original)
+- CRUD de Categorias con slug auto-generado
+- CRUD de Proveedores (Supplier) con datos de contacto y CBU
+- Paginas /admin/categorias y /admin/proveedores
+
+#### Hito 5.6 — Gestion de Pedidos con cambio de estado
+(desplazado desde Hito 5.4 original)
+- Lista de pedidos con filtro por estado
+- Detalle de pedido con items y datos de contacto
+- Cambio de estado (PENDING → CONFIRMED → PREPARING → SHIPPED → DELIVERED)
+- Pagina /admin/pedidos
+
+#### Hito 5.7 — Dashboard con stats y grafico de ventas
+(desplazado desde Hito 5.5 original)
+- Cards de metricas: ventas totales, pedidos del mes, productos activos, stock bajo
+- Grafico de ventas por periodo (Recharts o similar)
+- GET /api/dashboard/stats y GET /api/dashboard/sales
 
 ---
 

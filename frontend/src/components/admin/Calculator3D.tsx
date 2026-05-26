@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import type { Filament } from '../../types'
 
@@ -92,6 +92,67 @@ function calculate(
     tithe: netProfit * COSTING.tithe,
     isEstimated: false,
   }
+}
+
+interface FilamentSelectProps {
+  filaments: Filament[]
+  value: string
+  onChange: (id: string) => void
+}
+
+function FilamentSelect({ filaments, value, onChange }: FilamentSelectProps) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const selected = filaments.find(f => f.id === value)
+
+  useEffect(() => {
+    if (!open) return
+    function handleOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative flex-1">
+      <button
+        type="button"
+        onClick={() => setOpen(p => !p)}
+        className="w-full flex items-center gap-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none hover:border-[var(--color-accent)] transition-colors text-left"
+      >
+        <span
+          className="size-3 rounded-full border border-white/20 flex-shrink-0"
+          style={{ backgroundColor: selected?.colorHex ?? '#6B7280' }}
+        />
+        <span className="truncate">
+          {selected
+            ? `${selected.colorName} — ${selected.brandName} (${selected.material})`
+            : 'Seleccioná...'}
+        </span>
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded border border-[var(--color-border-light)] bg-[var(--color-surface-2)] shadow-lg">
+          {filaments.map(f => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => { onChange(f.id); setOpen(false) }}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors hover:bg-[var(--color-surface)] ${
+                f.id === value ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]'
+              }`}
+            >
+              <span
+                className="size-3 rounded-full border border-white/20 flex-shrink-0"
+                style={{ backgroundColor: f.colorHex ?? '#6B7280' }}
+              />
+              <span className="truncate">{f.colorName} — {f.brandName} ({f.material})</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 interface Calculator3DProps {
@@ -232,50 +293,35 @@ export default function Calculator3D({
           </div>
         )}
 
-        {materialRows.map((row, idx) => {
-          const filament = filaments.find(f => f.id === row.filamentId)
-          return (
-            <div key={idx} className="flex items-center gap-2">
-              <select
-                value={row.filamentId}
-                onChange={e => updateRow(idx, { filamentId: e.target.value })}
-                className="flex-1 rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
-              >
-                {activeFilaments.map(f => (
-                  <option key={f.id} value={f.id}>
-                    {f.colorName} — {f.brandName} ({f.material})
-                  </option>
-                ))}
-              </select>
-              <div className="flex items-center gap-1">
-                {filament?.colorHex && (
-                  <span
-                    className="inline-block size-3 rounded-full border border-[var(--color-border)] flex-shrink-0"
-                    style={{ backgroundColor: filament.colorHex }}
-                  />
-                )}
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  placeholder="gs"
-                  value={row.grams || ''}
-                  onChange={e => updateRow(idx, { grams: parseFloat(e.target.value) || 0 })}
-                  className="w-20 rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-                <span className="text-xs text-[var(--color-text-muted)]">g</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => removeRow(idx)}
-                aria-label="Quitar material"
-                className="rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-red)] transition-colors"
-              >
-                <X size={14} />
-              </button>
+        {materialRows.map((row, idx) => (
+          <div key={idx} className="flex items-center gap-2">
+            <FilamentSelect
+              filaments={activeFilaments}
+              value={row.filamentId}
+              onChange={id => updateRow(idx, { filamentId: id })}
+            />
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                placeholder="gs"
+                value={row.grams || ''}
+                onChange={e => updateRow(idx, { grams: parseFloat(e.target.value) || 0 })}
+                className="w-20 rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="text-xs text-[var(--color-text-muted)]">g</span>
             </div>
-          )
-        })}
+            <button
+              type="button"
+              onClick={() => removeRow(idx)}
+              aria-label="Quitar material"
+              className="rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-red)] transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ))}
       </div>
 
       {/* Results */}

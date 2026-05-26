@@ -44,6 +44,8 @@ function FilamentForm({
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -58,6 +60,8 @@ function FilamentForm({
         }
       : { isActive: true },
   })
+
+  const colorHex = watch('colorHex') ?? ''
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -86,12 +90,22 @@ function FilamentForm({
           <label className="text-sm font-medium text-[var(--color-text-primary)]">
             Color HEX <span className="text-[var(--color-text-muted)] font-normal">(opcional)</span>
           </label>
-          <input
-            type="text"
-            placeholder="#1A2BC3"
-            className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] placeholder:text-[var(--color-text-muted)] font-mono"
-            {...register('colorHex')}
-          />
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={colorHex || '#1a1a1a'}
+              onChange={e => setValue('colorHex', e.target.value, { shouldValidate: true })}
+              title="Seleccionar color"
+              className="h-9 w-10 cursor-pointer rounded border border-[var(--color-border)] bg-[var(--color-surface)] p-0.5 outline-none hover:border-[var(--color-accent)] focus:border-[var(--color-accent)] [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-sm"
+            />
+            <input
+              type="text"
+              placeholder="#1A2BC3"
+              value={colorHex}
+              onChange={e => setValue('colorHex', e.target.value, { shouldValidate: true })}
+              className="flex-1 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] placeholder:text-[var(--color-text-muted)] font-mono"
+            />
+          </div>
           {errors.colorHex && (
             <p className="text-xs text-[var(--color-red)]">{errors.colorHex.message}</p>
           )}

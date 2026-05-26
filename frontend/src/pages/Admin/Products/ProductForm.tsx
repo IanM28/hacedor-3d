@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { Loader2, Upload, X } from 'lucide-react'
 import Input from '../../../components/ui/Input'
 import Button from '../../../components/ui/Button'
+import { useToast } from '../../../components/ui/useToast'
 import { useCategories } from '../../../hooks/useCategories'
 import { useFilaments } from '../../../hooks/useFilaments'
 import { uploadService } from '../../../services/upload.service'
@@ -39,6 +40,7 @@ interface ProductFormProps {
 export default function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProps) {
   const { data: categories = [] } = useCategories()
   const { data: filaments = [] } = useFilaments()
+  const { toast } = useToast()
 
   const [images, setImages] = useState<string[]>(product?.images ?? [])
   const [uploading, setUploading] = useState(false)
@@ -80,13 +82,23 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Imagen demasiado grande. Máximo 5 MB.')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
     setUploadError(null)
     setUploading(true)
     try {
       const url = await uploadService.uploadProductImage(file)
       setImages(prev => [...prev, url])
-    } catch {
-      setUploadError('Error al subir imagen. Verificá Cloudinary.')
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Error al subir imagen. Verificá Cloudinary.'
+      setUploadError(message)
+      toast.error(message)
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -278,10 +290,16 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
             const f = filaments.find(x => x.id === row.filamentId)
             return (
               <div key={idx} className="flex items-center justify-between text-xs">
-                <span className="text-[var(--color-text-secondary)]">
-                  {f ? `${f.colorName} — ${f.brandName} (${f.material})` : row.filamentId}
-                </span>
-                <span className="font-mono text-[var(--color-text-primary)]">{row.grams}g</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="size-3 rounded-full border border-white/20 flex-shrink-0"
+                    style={{ backgroundColor: f?.colorHex ?? '#6B7280' }}
+                  />
+                  <span className="truncate text-[var(--color-text-secondary)]">
+                    {f ? `${f.colorName} — ${f.brandName} (${f.material})` : row.filamentId}
+                  </span>
+                </div>
+                <span className="font-mono text-[var(--color-text-primary)] flex-shrink-0 ml-2">{row.grams}g</span>
               </div>
             )
           })}
