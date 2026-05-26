@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Eye, EyeOff, Minus, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useAdminProducts } from '../../../hooks/useProducts'
 import { productService } from '../../../services/product.service'
 import { useToast } from '../../../components/ui/useToast'
@@ -9,6 +9,46 @@ import Button from '../../../components/ui/Button'
 import Badge from '../../../components/ui/Badge'
 import ProductForm from './ProductForm'
 import type { CreateProductInput, Product, UpdateProductInput } from '../../../types'
+
+function StockCell({
+  product,
+  onUpdate,
+  isPending,
+}: {
+  product: Product
+  onUpdate: (id: string, stock: number) => void
+  isPending: boolean
+}) {
+  return (
+    <div className="flex items-center justify-center gap-1">
+      <button
+        type="button"
+        disabled={product.stock === 0 || isPending}
+        onClick={() => onUpdate(product.id, product.stock - 1)}
+        aria-label="Reducir stock"
+        className="flex size-6 items-center justify-center rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)] disabled:opacity-30 transition-colors"
+      >
+        <Minus size={11} />
+      </button>
+      <span
+        className={`w-7 text-center font-mono text-sm transition-opacity ${
+          isPending ? 'opacity-40' : 'text-[var(--color-text-primary)]'
+        }`}
+      >
+        {product.stock}
+      </span>
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={() => onUpdate(product.id, product.stock + 1)}
+        aria-label="Aumentar stock"
+        className="flex size-6 items-center justify-center rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)] disabled:opacity-30 transition-colors"
+      >
+        <Plus size={11} />
+      </button>
+    </div>
+  )
+}
 
 const PAGE_SIZE = 10
 
@@ -64,6 +104,23 @@ export default function AdminProducts() {
     onSuccess: () => {
       toast.success('Producto eliminado.')
       setDeleteTarget(null)
+      invalidate()
+    },
+    onError: (err: Error) => toast.error(err.message),
+  })
+
+  const stockMutation = useMutation({
+    mutationFn: ({ id, stock }: { id: string; stock: number }) =>
+      productService.update(id, { stock }),
+    onSuccess: () => invalidate(),
+    onError: (err: Error) => toast.error(err.message),
+  })
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      productService.update(id, { isActive }),
+    onSuccess: () => {
+      toast.success('Estado actualizado.')
       invalidate()
     },
     onError: (err: Error) => toast.error(err.message),
@@ -163,8 +220,15 @@ export default function AdminProducts() {
                   <td className="px-4 py-3 text-[var(--color-text-primary)] whitespace-nowrap">
                     {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(product.price)}
                   </td>
-                  <td className="px-4 py-3 text-[var(--color-text-primary)] text-center">
-                    {product.stock}
+                  <td className="px-4 py-3">
+                    <StockCell
+                      product={product}
+                      onUpdate={(id, stock) => stockMutation.mutate({ id, stock })}
+                      isPending={
+                        stockMutation.isPending &&
+                        stockMutation.variables?.id === product.id
+                      }
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant={product.isActive ? 'accent' : 'muted'}>
@@ -172,13 +236,29 @@ export default function AdminProducts() {
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2 justify-end">
+                    <div className="flex items-center gap-1 justify-end">
                       <button
                         onClick={() => setEditProduct(product)}
                         aria-label={`Editar ${product.code}`}
                         className="p-1.5 rounded text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)] transition-colors"
                       >
                         <Pencil size={15} />
+                      </button>
+                      <button
+                        onClick={() =>
+                          toggleMutation.mutate({
+                            id: product.id,
+                            isActive: !product.isActive,
+                          })
+                        }
+                        disabled={
+                          toggleMutation.isPending &&
+                          toggleMutation.variables?.id === product.id
+                        }
+                        aria-label={product.isActive ? `Desactivar ${product.code}` : `Activar ${product.code}`}
+                        className="p-1.5 rounded text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-surface-2)] disabled:opacity-40 transition-colors"
+                      >
+                        {product.isActive ? <EyeOff size={15} /> : <Eye size={15} />}
                       </button>
                       <button
                         onClick={() => setDeleteTarget(product)}
@@ -262,9 +342,9 @@ export default function AdminProducts() {
         {deleteTarget && (
           <div className="space-y-4">
             <p className="text-sm text-[var(--color-text-secondary)]">
-              ¿Eliminar{' '}
+              ¿Estás seguro de que deseas eliminar{' '}
               <span className="font-mono text-[var(--color-accent)]">{deleteTarget.code}</span>?
-              El producto quedará inactivo y no aparecerá en el catálogo.
+              Esta acción no se puede deshacer.
             </p>
             <div className="flex justify-end gap-3">
               <Button variant="secondary" size="sm" onClick={() => setDeleteTarget(null)}>

@@ -36,7 +36,7 @@ export default function ProductInfo({ product }: { product: Product }) {
 
       <Badge variant="muted">{product.category.name}</Badge>
 
-      <p className="font-body text-sm leading-relaxed text-[var(--color-text-secondary)]">
+      <p className="font-body text-sm leading-relaxed text-[var(--color-text-secondary)] whitespace-pre-line">
         {product.description}
       </p>
 

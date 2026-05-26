@@ -164,6 +164,8 @@ interface Calculator3DProps {
   initialMaterialRows?: MaterialRow[]
   onSuggestedPrice?: (price: number) => void
   onMaterialRowsChange?: (rows: MaterialRow[]) => void
+  onPrintHoursChange?: (hours: number) => void
+  onMultiplierChange?: (multiplier: number) => void
 }
 
 export default function Calculator3D({
@@ -175,6 +177,8 @@ export default function Calculator3D({
   initialMaterialRows = [],
   onSuggestedPrice,
   onMaterialRowsChange,
+  onPrintHoursChange,
+  onMultiplierChange,
 }: Calculator3DProps) {
   const [printHours, setPrintHours] = useState(initialPrintHours)
   const [multiplier, setMultiplier] = useState(initialMultiplier)
@@ -229,7 +233,11 @@ export default function Calculator3D({
             min="0"
             placeholder="0"
             value={printHours || ''}
-            onChange={e => setPrintHours(parseFloat(e.target.value) || 0)}
+            onChange={e => {
+              const val = parseFloat(e.target.value) || 0
+              setPrintHours(val)
+              onPrintHoursChange?.(val)
+            }}
             className={fieldClass}
           />
         </div>
@@ -241,7 +249,11 @@ export default function Calculator3D({
             min="0"
             placeholder="8"
             value={multiplier || ''}
-            onChange={e => setMultiplier(parseFloat(e.target.value) || 0)}
+            onChange={e => {
+              const val = parseFloat(e.target.value) || 0
+              setMultiplier(val)
+              onMultiplierChange?.(val)
+            }}
             className={fieldClass}
           />
         </div>

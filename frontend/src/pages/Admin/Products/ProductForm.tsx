@@ -15,7 +15,7 @@ import type { CreateProductInput, Product, UpdateProductInput } from '../../../t
 const optNum = z.coerce.number().min(0).optional()
 
 const schema = z.object({
-  code: z.string().regex(/^[A-Z]+-\d{2}$/, 'Formato: AERO-01'),
+  code: z.string().trim().regex(/^[A-Z]+-\d{2}$/, 'Formato: AERO-01'),
   name: z.string().min(2, 'Mínimo 2 caracteres'),
   description: z.string().min(5, 'Mínimo 5 caracteres'),
   price: z.coerce.number().positive('Precio debe ser positivo'),
@@ -233,9 +233,9 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
             {images.map((url, i) => (
               <div
                 key={i}
-                className="relative w-16 h-16 rounded border border-[var(--color-border)] overflow-hidden"
+                className="relative w-16 h-16 rounded border border-[var(--color-border)] overflow-hidden bg-zinc-900"
               >
-                <img src={url} alt="" className="w-full h-full object-cover" />
+                <img src={url} alt="" className="w-full h-full object-contain" />
                 <button
                   type="button"
                   onClick={() => removeImage(i)}
@@ -257,28 +257,11 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
         initialMultiplier={currentMultiplier}
         initialSalePrice={currentPrice}
         initialMaterialRows={materialRows}
-        onSuggestedPrice={price => setValue('price', price)}
+        onSuggestedPrice={price => setValue('price', price, { shouldValidate: true })}
+        onPrintHoursChange={h => setValue('printHours', h, { shouldValidate: true })}
+        onMultiplierChange={m => setValue('profitMultiplier', m, { shouldValidate: true })}
         onMaterialRowsChange={setMaterialRows}
       />
-
-      {/* Hidden print hours & multiplier fields synced via Calculator */}
-      <div className="grid grid-cols-2 gap-3">
-        <Input
-          label="Hs. impresión"
-          type="number"
-          step="0.1"
-          min="0"
-          {...register('printHours')}
-        />
-        <Input
-          label="Multiplicador ganancia"
-          type="number"
-          step="0.5"
-          min="0"
-          placeholder="8"
-          {...register('profitMultiplier')}
-        />
-      </div>
 
       {/* Material rows synced from Calculator */}
       {materialRows.length > 0 && (

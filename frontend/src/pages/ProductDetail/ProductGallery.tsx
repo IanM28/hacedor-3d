@@ -13,7 +13,7 @@ export default function ProductGallery({ images, alt, code }: ProductGalleryProp
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative aspect-square overflow-hidden rounded-md bg-[var(--color-surface-2)]">
+      <div className="relative aspect-square overflow-hidden rounded-md bg-zinc-900">
         <AnimatePresence mode="wait">
           {current ? (
             <motion.img
@@ -24,7 +24,7 @@ export default function ProductGallery({ images, alt, code }: ProductGalleryProp
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
@@ -48,7 +48,7 @@ export default function ProductGallery({ images, alt, code }: ProductGalleryProp
                   : 'border-[var(--color-border)] hover:border-[var(--color-border-light)]'
               }`}
             >
-              <img src={img} alt={`Miniatura ${idx + 1}`} className="h-full w-full object-cover" />
+              <img src={img} alt={`Miniatura ${idx + 1}`} className="h-full w-full object-contain bg-zinc-900" />
             </button>
           ))}
         </div>
