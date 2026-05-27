@@ -6,9 +6,7 @@ const filamentUsageSchema = z.object({
 })
 
 export const createProductSchema = z.object({
-  code: z
-    .string()
-    .regex(/^[A-Z]+-\d{2}$/, 'Formato inválido. Ejemplo: AERO-01'),
+  code: z.string().trim().min(2, 'Código mínimo 2 caracteres'),
   name: z.string().min(2, 'Nombre mínimo 2 caracteres'),
   description: z.string().min(5, 'Descripción mínima 5 caracteres'),
   price: z.number().positive('El precio debe ser positivo'),

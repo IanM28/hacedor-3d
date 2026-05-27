@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,16 +6,16 @@ import { Loader2, Upload, X } from 'lucide-react'
 import Input from '../../../components/ui/Input'
 import Button from '../../../components/ui/Button'
 import { useToast } from '../../../components/ui/useToast'
-import { useCategories } from '../../../hooks/useCategories'
+import { useAdminCategories } from '../../../hooks/useCategories'
 import { useFilaments } from '../../../hooks/useFilaments'
 import { uploadService } from '../../../services/upload.service'
 import Calculator3D, { type MaterialRow } from '../../../components/admin/Calculator3D'
-import type { CreateProductInput, Product, UpdateProductInput } from '../../../types'
+import type { Category, CreateProductInput, Product, UpdateProductInput } from '../../../types'
 
 const optNum = z.coerce.number().min(0).optional()
 
 const schema = z.object({
-  code: z.string().trim().regex(/^[A-Z]+-\d{2}$/, 'Formato: AERO-01'),
+  code: z.string().trim().min(2, 'Mínimo 2 caracteres'),
   name: z.string().min(2, 'Mínimo 2 caracteres'),
   description: z.string().min(5, 'Mínimo 5 caracteres'),
   price: z.coerce.number().positive('Precio debe ser positivo'),
@@ -37,8 +37,86 @@ interface ProductFormProps {
   isSubmitting: boolean
 }
 
+interface CategorySelectProps {
+  categories: Category[]
+  value: string
+  onChange: (id: string) => void
+  hasError: boolean
+}
+
+function CategorySelect({ categories, value, onChange, hasError }: CategorySelectProps) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const selected = categories.find(c => c.id === value)
+
+  useEffect(() => {
+    if (!open) return
+    function handleOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(p => !p)}
+        className={[
+          'w-full flex items-center gap-2 rounded-md border bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none transition-colors text-left',
+          hasError
+            ? 'border-[var(--color-red)]'
+            : open
+              ? 'border-[var(--color-accent)] ring-1 ring-[var(--color-accent)]'
+              : 'border-[var(--color-border)] hover:border-[var(--color-accent)]',
+        ].join(' ')}
+      >
+        <span
+          className="size-3.5 rounded-full border border-white/20 flex-shrink-0"
+          style={{ backgroundColor: selected?.colorHex ?? '#6B7280' }}
+        />
+        <span className="truncate flex-1">
+          {selected ? selected.name : 'Seleccioná una categoría...'}
+        </span>
+        <span className="text-[var(--color-text-muted)] text-xs">▾</span>
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-48 overflow-y-auto rounded border border-[var(--color-border-light)] bg-[var(--color-surface-2)] shadow-lg">
+          {categories.length === 0 ? (
+            <p className="px-3 py-2 text-xs text-[var(--color-text-muted)]">Sin categorías disponibles.</p>
+          ) : (
+            categories.map(c => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => { onChange(c.id); setOpen(false) }}
+                className={[
+                  'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors hover:bg-[var(--color-surface)]',
+                  c.id === value ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-primary)]',
+                  !c.isActive ? 'opacity-50' : '',
+                ].join(' ')}
+              >
+                <span
+                  className="size-3.5 rounded-full border border-white/20 flex-shrink-0"
+                  style={{ backgroundColor: c.colorHex ?? '#6B7280' }}
+                />
+                <span className="truncate">{c.name}</span>
+                {!c.isActive && (
+                  <span className="ml-auto text-xs text-[var(--color-text-muted)] flex-shrink-0">inactiva</span>
+                )}
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ProductForm({ product, onSubmit, isSubmitting }: ProductFormProps) {
-  const { data: categories = [] } = useCategories()
+  const { data: categories = [] } = useAdminCategories()
   const { data: filaments = [] } = useFilaments()
   const { toast } = useToast()
 
@@ -125,8 +203,7 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
       <div className="grid grid-cols-2 gap-3">
         <Input
           label="Código"
-          placeholder="AERO-01"
-          helperText="Formato: AERO-01, STN-02"
+          placeholder="AERO-01, MOD-03, TLR-1A..."
           error={errors.code?.message}
           disabled={!!product}
           {...register('code')}
@@ -167,17 +244,12 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-[var(--color-text-primary)]">Categoría</label>
-        <select
-          className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)]"
-          {...register('categoryId')}
-        >
-          <option value="">Seleccioná...</option>
-          {categories.map(c => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+        <CategorySelect
+          categories={categories}
+          value={watch('categoryId') ?? ''}
+          onChange={id => setValue('categoryId', id, { shouldValidate: true })}
+          hasError={!!errors.categoryId}
+        />
         {errors.categoryId && (
           <p className="text-xs text-[var(--color-red)]">{errors.categoryId.message}</p>
         )}
