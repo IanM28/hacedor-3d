@@ -1,84 +1,85 @@
-import { Landmark, Package, TrendingUp, Users } from 'lucide-react'
-import { useDashboardSales } from '../../../hooks/useDashboardSales'
+import { useState } from 'react'
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  Landmark,
+  Package,
+  ShoppingCart,
+  TrendingUp,
+} from 'lucide-react'
+import { SalesChart } from '../../../components/admin/SalesChart'
+import { ManualTitheCalculator } from '../../../components/admin/ManualTitheCalculator'
 import { useDashboardStats } from '../../../hooks/useDashboardStats'
-import type { OrderStatus } from '../../../types'
 
 const formatARS = (value: number) =>
-  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value)
-
-const formatDate = (value: string) =>
-  new Date(value).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  PENDING: 'Pendiente',
-  CONFIRMED: 'Confirmado',
-  IN_PRODUCTION: 'En producción',
-  PREPARING: 'Preparando',
-  SHIPPED: 'Enviado',
-  DELIVERED: 'Entregado',
-  CANCELLED: 'Cancelado',
-}
-
-const STATUS_COLORS: Record<OrderStatus, string> = {
-  PENDING: 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]',
-  CONFIRMED: 'bg-blue-900/40 text-blue-300',
-  IN_PRODUCTION: 'bg-blue-900/60 text-blue-200',
-  PREPARING: 'bg-orange-900/40 text-orange-300',
-  SHIPPED: 'bg-violet-900/40 text-violet-300',
-  DELIVERED: 'bg-[var(--color-accent-dim)] text-[var(--color-accent-hover)]',
-  CANCELLED: 'bg-red-900/30 text-red-400',
-}
+  new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0,
+  }).format(value)
 
 interface StatCardProps {
   label: string
   value: string
   icon: React.ElementType
   sub?: React.ReactNode
+  alert?: boolean
 }
 
-function StatCard({ label, value, icon: Icon, sub }: StatCardProps) {
+function StatCard({ label, value, icon: Icon, sub, alert }: StatCardProps) {
   return (
-    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded p-5 flex flex-col gap-3">
+    <div
+      className={[
+        'bg-[var(--color-surface)] border rounded p-5 flex flex-col gap-3 transition-colors',
+        alert
+          ? 'border-[var(--color-red)]/40'
+          : 'border-[var(--color-border)]',
+      ].join(' ')}
+    >
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium uppercase tracking-widest text-[var(--color-text-secondary)]">
           {label}
         </span>
-        <Icon size={18} className="text-[var(--color-accent)]" />
+        <Icon
+          size={18}
+          className={alert ? 'text-[var(--color-red)]' : 'text-[var(--color-accent)]'}
+        />
       </div>
-      <p className="text-2xl font-heading tracking-wide text-[var(--color-text-primary)]">{value}</p>
+      <p className="font-mono text-2xl tracking-tight text-[var(--color-text-primary)]">{value}</p>
       {sub && <div className="text-xs text-[var(--color-text-secondary)]">{sub}</div>}
     </div>
   )
 }
 
+function StatsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-28 bg-[var(--color-surface)] border border-[var(--color-border)] rounded animate-pulse"
+        />
+      ))}
+    </div>
+  )
+}
+
+function TitheSectionDivider() {
+  return (
+    <div className="flex items-center gap-3 py-1">
+      <div className="h-px flex-1 bg-[var(--color-border)]" />
+      <span className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-text-muted)]">
+        Calculador de diezmo
+      </span>
+      <div className="h-px flex-1 bg-[var(--color-border)]" />
+    </div>
+  )
+}
+
 export default function AdminDashboard() {
-  const { data: stats, isLoading: statsLoading, error: statsError } = useDashboardStats()
-  const { data: sales, isLoading: salesLoading, error: salesError } = useDashboardSales()
-
-  if (statsLoading || salesLoading) {
-    return (
-      <div className="p-6 md:p-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-28 bg-[var(--color-surface)] border border-[var(--color-border)] rounded animate-pulse" />
-          ))}
-        </div>
-        <div className="h-64 bg-[var(--color-surface)] border border-[var(--color-border)] rounded animate-pulse" />
-      </div>
-    )
-  }
-
-  if (statsError || salesError) {
-    return (
-      <div className="p-6 md:p-8">
-        <p className="text-sm text-[var(--color-text-secondary)]">
-          {statsError?.message ?? salesError?.message ?? 'Error al cargar el dashboard.'}
-        </p>
-      </div>
-    )
-  }
-
-  if (!stats || !sales) return null
+  const { data: stats, isLoading, error } = useDashboardStats()
+  const [calculatorOpen, setCalculatorOpen] = useState(false)
 
   return (
     <div className="p-6 md:p-8 space-y-8">
@@ -90,98 +91,93 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Clientes" value={String(stats.totalClients)} icon={Users} />
+      {isLoading && <StatsSkeleton />}
 
-        <StatCard
-          label="Ventas del mes"
-          value={formatARS(stats.monthlySales)}
-          icon={TrendingUp}
-        />
+      {error && (
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          {error.message ?? 'Error al cargar el dashboard.'}
+        </p>
+      )}
 
-        <StatCard label="Productos activos" value={String(stats.activeProducts)} icon={Package} />
+      {stats && !isLoading && (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          <StatCard
+            label="Ventas totales"
+            value={formatARS(stats.totalSales)}
+            icon={TrendingUp}
+          />
 
-        <StatCard
-          label="Diezmo acumulado"
-          value={formatARS(stats.titheAmount)}
-          icon={Landmark}
-          sub={
-            <div className="space-y-1">
-              <p>Ganancia neta: {formatARS(stats.netProfit)}</p>
-              {stats.isProfitEstimated && (
-                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-900/40 text-orange-300 uppercase tracking-wide">
-                  Estimado
+          <StatCard
+            label="Pedidos (30d)"
+            value={String(stats.monthlyOrders)}
+            icon={ShoppingCart}
+          />
+
+          <StatCard
+            label="Productos activos"
+            value={String(stats.activeProducts)}
+            icon={Package}
+          />
+
+          <StatCard
+            label="Stock bajo"
+            value={String(stats.lowStockProducts)}
+            icon={AlertTriangle}
+            alert={stats.lowStockProducts > 0}
+            sub={
+              stats.lowStockProducts > 0 ? (
+                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--color-red)]/20 text-[var(--color-red)] uppercase tracking-wide">
+                  Atención requerida
                 </span>
-              )}
-            </div>
-          }
-        />
-      </div>
+              ) : (
+                <span className="text-[var(--color-text-muted)]">Sin alertas</span>
+              )
+            }
+          />
 
-      {/* Recent sales table */}
+          <StatCard
+            label="Diezmo general"
+            value={formatARS(stats.generalTithe)}
+            icon={Landmark}
+            sub={
+              <span className="text-[var(--color-text-muted)]">10% de ventas concretadas</span>
+            }
+          />
+        </div>
+      )}
+
+      {/* Sales chart */}
+      <SalesChart />
+
+      {/* Manual Tithe Calculator */}
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded overflow-hidden">
-        <div className="px-5 py-4 border-b border-[var(--color-border)]">
-          <h2 className="text-sm font-medium uppercase tracking-widest text-[var(--color-text-secondary)]">
-            Ventas recientes
-          </h2>
-        </div>
+        <button
+          onClick={() => setCalculatorOpen(prev => !prev)}
+          className="w-full flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)] hover:bg-[var(--color-surface-2)] transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Landmark size={16} className="text-[var(--color-accent)]" />
+            <span className="text-sm font-medium uppercase tracking-widest text-[var(--color-text-secondary)]">
+              Calculador manual de diezmo por lote
+            </span>
+          </div>
+          {calculatorOpen ? (
+            <ChevronUp size={16} className="text-[var(--color-text-muted)]" />
+          ) : (
+            <ChevronDown size={16} className="text-[var(--color-text-muted)]" />
+          )}
+        </button>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--color-border)]">
-                {['ID', 'Cliente', 'Total', 'Estado', 'Fecha'].map(col => (
-                  <th
-                    key={col}
-                    className="px-4 py-3 text-left text-xs font-medium uppercase tracking-widest text-[var(--color-text-muted)] whitespace-nowrap"
-                  >
-                    {col}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sales.map(sale => {
-                const clientName = sale.user
-                  ? `${sale.user.name} ${sale.user.lastName}`
-                  : (sale.guestEmail ?? sale.contactName)
-                return (
-                  <tr
-                    key={sale.id}
-                    className="border-b border-[var(--color-border)] last:border-0 hover:bg-[var(--color-surface-2)] transition-colors"
-                  >
-                    <td className="px-4 py-3 font-mono text-xs text-[var(--color-accent)] whitespace-nowrap">
-                      #{sale.id.slice(0, 8)}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--color-text-primary)] max-w-[180px] truncate">
-                      {clientName}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--color-text-primary)] whitespace-nowrap">
-                      {formatARS(sale.total)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[sale.status]}`}
-                      >
-                        {STATUS_LABELS[sale.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-[var(--color-text-secondary)] whitespace-nowrap">
-                      {formatDate(sale.createdAt)}
-                    </td>
-                  </tr>
-                )
-              })}
-              {sales.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-[var(--color-text-muted)]">
-                    Sin ventas registradas.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {calculatorOpen && (
+          <div className="p-5 space-y-4">
+            <TitheSectionDivider />
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Seleccioná productos y cantidades para calcular el diezmo de un lote específico.
+              Este cálculo es local y no se guarda.
+            </p>
+            <ManualTitheCalculator />
+          </div>
+        )}
       </div>
     </div>
   )

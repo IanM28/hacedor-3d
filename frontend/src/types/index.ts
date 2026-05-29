@@ -187,13 +187,20 @@ export interface OrderItem {
 }
 
 export interface DashboardStats {
-  totalClients: number
-  monthlySales: number
-  totalAmount: number
+  totalSales: number
+  monthlyOrders: number
   activeProducts: number
-  netProfit: number
-  titheAmount: number
-  isProfitEstimated: boolean
+  lowStockProducts: number
+  generalTithe: number
+}
+
+export type DashboardSalesPeriod = '7d' | '30d' | '1y'
+
+export interface DashboardSalesPoint {
+  label: string
+  date: string
+  total: number
+  orders: number
 }
 
 export interface DashboardSaleUser {
