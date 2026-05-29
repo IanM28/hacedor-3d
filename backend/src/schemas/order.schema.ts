@@ -3,10 +3,20 @@ import { z } from 'zod'
 export const orderStatusEnum = z.enum([
   'PENDING',
   'CONFIRMED',
+  'IN_PRODUCTION',
   'PREPARING',
   'SHIPPED',
   'DELIVERED',
   'CANCELLED',
+])
+
+export const adminOrderStatusEnum = z.enum([
+  'PENDING',
+  'CONFIRMED',
+  'IN_PRODUCTION',
+  'PREPARING',
+  'SHIPPED',
+  'DELIVERED',
 ])
 
 export const paymentMethodEnum = z.enum(['MERCADOPAGO', 'TRANSFER', 'CASH'])
@@ -32,5 +42,17 @@ export const updateOrderStatusSchema = z.object({
   status: orderStatusEnum,
 })
 
+export const adminListOrdersSchema = z.object({
+  status: orderStatusEnum.optional(),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(20),
+})
+
+export const adminUpdateOrderStatusSchema = z.object({
+  status: adminOrderStatusEnum,
+})
+
 export type CreateOrderInput = z.infer<typeof createOrderSchema>
 export type UpdateOrderStatusInput = z.infer<typeof updateOrderStatusSchema>
+export type AdminListOrdersInput = z.infer<typeof adminListOrdersSchema>
+export type AdminUpdateOrderStatusInput = z.infer<typeof adminUpdateOrderStatusSchema>

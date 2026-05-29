@@ -157,6 +157,7 @@ export type PaymentMethod = 'TRANSFER' | 'MERCADOPAGO' | 'CASH'
 export type OrderStatus =
   | 'PENDING'
   | 'CONFIRMED'
+  | 'IN_PRODUCTION'
   | 'PREPARING'
   | 'SHIPPED'
   | 'DELIVERED'
@@ -228,4 +229,66 @@ export interface Order {
   mpPreferenceId?: string | null
   createdAt: string
   items: OrderItem[]
+}
+
+export interface AdminOrderUser {
+  id: string
+  email: string
+  name: string
+  lastName: string
+}
+
+export interface AdminOrderProduct {
+  id: string
+  code: string
+  name: string
+  images: string[]
+  price: number
+  category?: { id: string; name: string }
+}
+
+export interface AdminOrderItem {
+  id: string
+  productId: string
+  quantity: number
+  unitPrice: number
+  product: AdminOrderProduct
+}
+
+export interface AdminOrderListItem {
+  id: string
+  contactName: string
+  guestEmail: string | null
+  status: OrderStatus
+  paymentMethod: PaymentMethod
+  total: number
+  shippingCost: number
+  createdAt: string
+  user: AdminOrderUser | null
+  items: AdminOrderItem[]
+}
+
+export interface AdminOrderDetail extends AdminOrderListItem {
+  address: string
+  phone: string
+  mpPaymentId: string | null
+  mpPreferenceId: string | null
+}
+
+export interface AdminOrdersMeta {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+export interface PaginatedAdminOrders {
+  items: AdminOrderListItem[]
+  meta: AdminOrdersMeta
+}
+
+export interface AdminOrderFilters {
+  status?: OrderStatus
+  page?: number
+  limit?: number
 }

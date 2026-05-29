@@ -6,6 +6,41 @@ const include = {
   user: { select: { id: true, email: true, name: true, lastName: true } },
 } satisfies Prisma.OrderInclude
 
+const adminInclude = {
+  user: { select: { id: true, email: true, name: true, lastName: true } },
+  items: {
+    include: {
+      product: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          images: true,
+          price: true,
+          category: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
+} satisfies Prisma.OrderInclude
+
+const STATUS_RANK: Record<string, number> = {
+  PENDING: 0,
+  CONFIRMED: 1,
+  IN_PRODUCTION: 2,
+  PREPARING: 3,
+  SHIPPED: 4,
+  DELIVERED: 5,
+}
+
+const VALID_NEXT: Record<string, string> = {
+  PENDING: 'CONFIRMED',
+  CONFIRMED: 'IN_PRODUCTION',
+  IN_PRODUCTION: 'PREPARING',
+  PREPARING: 'SHIPPED',
+  SHIPPED: 'DELIVERED',
+}
+
 interface CreateOrderParams {
   userId?: string
   guestEmail?: string
@@ -24,6 +59,12 @@ interface ListParams {
 
 interface FindOneParams extends ListParams {
   id: string
+}
+
+interface AdminListParams {
+  status?: OrderStatus
+  page: number
+  limit: number
 }
 
 function httpError(message: string, statusCode: number): Error {
@@ -139,5 +180,63 @@ export const orderService = {
     if (!exists) throw httpError('Pedido no encontrado', 404)
 
     return prisma.order.update({ where: { id }, data: { status }, include })
+  },
+
+  async findAllAdmin({ status, page, limit }: AdminListParams) {
+    const where: Prisma.OrderWhereInput = status ? { status } : {}
+    const skip = (page - 1) * limit
+
+    const [total, items] = await Promise.all([
+      prisma.order.count({ where }),
+      prisma.order.findMany({
+        where,
+        include: adminInclude,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+    ])
+
+    return {
+      items,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    }
+  },
+
+  async findAdminById(id: string) {
+    const order = await prisma.order.findUnique({ where: { id }, include: adminInclude })
+    if (!order) throw httpError('Pedido no encontrado', 404)
+    return order
+  },
+
+  async updateAdminStatus({ id, status }: { id: string; status: OrderStatus }) {
+    const order = await prisma.order.findUnique({ where: { id } })
+    if (!order) throw httpError('Pedido no encontrado', 404)
+
+    const currentRank = STATUS_RANK[order.status as string]
+    const newRank = STATUS_RANK[status as string]
+
+    if (currentRank === undefined || newRank === undefined) {
+      throw httpError('Estado inválido', 400)
+    }
+
+    if (order.status === status) {
+      return prisma.order.findUnique({ where: { id }, include: adminInclude })
+    }
+
+    const expectedNext = VALID_NEXT[order.status as string]
+    if (expectedNext !== status) {
+      throw httpError(
+        `Transición inválida: no se puede pasar de ${order.status} a ${status}. Siguiente estado válido: ${expectedNext ?? 'ninguno'}`,
+        400,
+      )
+    }
+
+    return prisma.order.update({ where: { id }, data: { status }, include: adminInclude })
   },
 }

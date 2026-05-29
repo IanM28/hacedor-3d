@@ -1,11 +1,19 @@
 import type { NextFunction, Request, Response } from 'express'
 import type { ZodSchema } from 'zod'
 
-export function validate(schema: ZodSchema) {
+type ValidateTarget = 'body' | 'query'
+
+export function validate(schema: ZodSchema, target: ValidateTarget = 'body') {
   return function validateMiddleware(req: Request, res: Response, next: NextFunction) {
-    const parsed = schema.safeParse(req.body)
+    const source = target === 'query' ? req.query : req.body
+    const parsed = schema.safeParse(source)
+
     if (parsed.success) {
-      req.body = parsed.data
+      if (target === 'query') {
+        req.query = parsed.data as Record<string, string>
+      } else {
+        req.body = parsed.data
+      }
       return next()
     }
 
@@ -15,4 +23,3 @@ export function validate(schema: ZodSchema) {
     })
   }
 }
-

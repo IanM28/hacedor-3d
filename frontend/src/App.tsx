@@ -17,6 +17,7 @@ import AdminFilaments from './pages/Admin/Filaments'
 import AdminCalculator from './pages/Admin/Calculator'
 import AdminCategories from './pages/Admin/Categories'
 import AdminSuppliers from './pages/Admin/Suppliers'
+import AdminOrders from './pages/Admin/Orders'
 
 function PublicLayout() {
   return (
@@ -30,16 +31,6 @@ function PublicLayout() {
   )
 }
 
-function AdminPlaceholder({ title }: { title: string }) {
-  return (
-    <div className="p-6 md:p-8">
-      <h1 className="font-heading text-3xl tracking-widest text-[var(--color-text-primary)]">
-        {title.toUpperCase()}
-      </h1>
-      <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Próximamente.</p>
-    </div>
-  )
-}
 
 export function App() {
   return (
@@ -63,7 +54,7 @@ export function App() {
         <Route path="proveedores" element={<AdminSuppliers />} />
         <Route path="filamentos" element={<AdminFilaments />} />
         <Route path="calculadora" element={<AdminCalculator />} />
-        <Route path="pedidos" element={<AdminPlaceholder title="Pedidos" />} />
+        <Route path="pedidos" element={<AdminOrders />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

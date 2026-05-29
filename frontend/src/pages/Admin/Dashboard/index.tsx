@@ -12,6 +12,7 @@ const formatDate = (value: string) =>
 const STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING: 'Pendiente',
   CONFIRMED: 'Confirmado',
+  IN_PRODUCTION: 'En producción',
   PREPARING: 'Preparando',
   SHIPPED: 'Enviado',
   DELIVERED: 'Entregado',
@@ -21,6 +22,7 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
 const STATUS_COLORS: Record<OrderStatus, string> = {
   PENDING: 'bg-[var(--color-surface-2)] text-[var(--color-text-secondary)]',
   CONFIRMED: 'bg-blue-900/40 text-blue-300',
+  IN_PRODUCTION: 'bg-blue-900/60 text-blue-200',
   PREPARING: 'bg-orange-900/40 text-orange-300',
   SHIPPED: 'bg-violet-900/40 text-violet-300',
   DELIVERED: 'bg-[var(--color-accent-dim)] text-[var(--color-accent-hover)]',
