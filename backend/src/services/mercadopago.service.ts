@@ -160,15 +160,31 @@ export const mercadopagoService = {
     const backendUrl = normalizeBaseUrl('BACKEND_URL')
     const back_urls = buildCheckoutBackUrls(frontendUrl)
 
+    const productItems = order.items.map(item => ({
+      id: item.productId,
+      title: `${item.product.code} - ${item.product.name}`,
+      description: item.product.description || item.product.code,
+      quantity: item.quantity,
+      unit_price: item.unitPrice,
+      currency_id: 'ARS',
+    }))
+
+    const shippingItem =
+      order.shippingCost > 0
+        ? [
+            {
+              id: 'shipping',
+              title: 'Envío',
+              description: `${order.shippingProvider ?? ''} ${order.shippingService ?? ''}`.trim() || 'Envío',
+              quantity: 1,
+              unit_price: order.shippingCost,
+              currency_id: 'ARS',
+            },
+          ]
+        : []
+
     const preferenceBody: PreferenceRequest = {
-      items: order.items.map(item => ({
-        id: item.productId,
-        title: `${item.product.code} - ${item.product.name}`,
-        description: item.product.description || item.product.code,
-        quantity: item.quantity,
-        unit_price: item.unitPrice,
-        currency_id: 'ARS',
-      })),
+      items: [...productItems, ...shippingItem],
       payer: {
         name: order.contactName,
         email: order.guestEmail ?? order.user?.email ?? '',

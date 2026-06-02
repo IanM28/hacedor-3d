@@ -20,6 +20,7 @@ const schema = z.object({
   description: z.string().min(5, 'Mínimo 5 caracteres'),
   price: z.coerce.number().positive('Precio debe ser positivo'),
   stock: z.coerce.number().int().min(0, 'Stock mínimo 0'),
+  weight: z.coerce.number().min(0, 'Peso mínimo 0').optional(),
   categoryId: z.string().uuid('Seleccioná una categoría'),
   isActive: z.boolean(),
   isFeatured: z.boolean(),
@@ -144,13 +145,14 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
           description: product.description,
           price: product.price,
           stock: product.stock,
+          weight: product.weight ?? 0,
           categoryId: product.category.id,
           isActive: product.isActive,
           isFeatured: product.isFeatured,
           printHours: product.printHours ?? undefined,
           profitMultiplier: product.profitMultiplier ?? undefined,
         }
-      : { isActive: true, isFeatured: false, stock: 0 },
+      : { isActive: true, isFeatured: false, stock: 0, weight: 0 },
   })
 
   const currentPrice = watch('price')
@@ -191,6 +193,7 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
     const payload: CreateProductInput = {
       ...values,
       images,
+      weight: values.weight ?? 0,
       printHours: cleanOpt(values.printHours),
       profitMultiplier: cleanOpt(values.profitMultiplier),
       filamentUsages: materialRows.filter(r => r.filamentId && r.grams > 0),
@@ -225,7 +228,7 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <Input
           label="Precio (ARS)"
           type="number"
@@ -239,6 +242,14 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
           step="1"
           error={errors.stock?.message}
           {...register('stock')}
+        />
+        <Input
+          label="Peso (g)"
+          type="number"
+          step="1"
+          min="0"
+          error={errors.weight?.message}
+          {...register('weight')}
         />
       </div>
 
@@ -330,6 +341,7 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
         initialSalePrice={currentPrice}
         initialMaterialRows={materialRows}
         onSuggestedPrice={price => setValue('price', price, { shouldValidate: true })}
+        onSuggestedWeight={grams => setValue('weight', Math.ceil(grams), { shouldValidate: true })}
         onPrintHoursChange={h => setValue('printHours', h, { shouldValidate: true })}
         onMultiplierChange={m => setValue('profitMultiplier', m, { shouldValidate: true })}
         onMaterialRowsChange={setMaterialRows}

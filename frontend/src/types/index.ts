@@ -67,6 +67,7 @@ export interface Product {
   description: string
   price: number
   stock: number
+  weight: number
   images: string[]
   isActive: boolean
   isFeatured: boolean
@@ -102,6 +103,7 @@ export interface CreateProductInput {
   description: string
   price: number
   stock: number
+  weight?: number
   images: string[]
   isActive?: boolean
   isFeatured?: boolean
@@ -175,7 +177,36 @@ export interface CreateOrderInput {
   phone: string
   paymentMethod: PaymentMethod
   shippingCost?: number
+  shippingProvider?: string
+  shippingService?: string
+  shippingPostalCode?: string
   items: OrderItemInput[]
+}
+
+export interface ShippingQuoteItem {
+  productId: string
+  quantity: number
+}
+
+export interface ShippingQuoteInput {
+  postalCode: string
+  items: ShippingQuoteItem[]
+}
+
+export interface ShippingQuoteOption {
+  id: string
+  provider: string
+  service: string
+  price: number
+  estimatedDelivery: string
+}
+
+export interface SelectedShippingOption {
+  id: string
+  provider: string
+  service: string
+  price: number
+  estimatedDelivery: string
 }
 
 export interface OrderItem {
@@ -228,6 +259,11 @@ export interface Order {
   status: OrderStatus
   total: number
   shippingCost: number
+  shippingProvider?: string | null
+  shippingService?: string | null
+  shippingPostalCode?: string | null
+  shippingTrackingNumber?: string | null
+  shippingLabelUrl?: string | null
   contactName: string
   address: string
   phone: string

@@ -163,6 +163,7 @@ interface Calculator3DProps {
   initialFallbackGrams?: number
   initialMaterialRows?: MaterialRow[]
   onSuggestedPrice?: (price: number) => void
+  onSuggestedWeight?: (grams: number) => void
   onMaterialRowsChange?: (rows: MaterialRow[]) => void
   onPrintHoursChange?: (hours: number) => void
   onMultiplierChange?: (multiplier: number) => void
@@ -176,6 +177,7 @@ export default function Calculator3D({
   initialFallbackGrams = 0,
   initialMaterialRows = [],
   onSuggestedPrice,
+  onSuggestedWeight,
   onMaterialRowsChange,
   onPrintHoursChange,
   onMultiplierChange,
@@ -200,6 +202,11 @@ export default function Calculator3D({
 
   const showResult =
     printHours > 0 || fallbackGrams > 0 || materialRows.length > 0 || salePrice > 0
+
+  const suggestedWeightGrams =
+    materialRows.length > 0
+      ? materialRows.reduce((sum, row) => sum + row.grams, 0)
+      : fallbackGrams
 
   function addRow() {
     if (activeFilaments.length === 0) return
@@ -377,7 +384,7 @@ export default function Calculator3D({
               {onSuggestedPrice && (
                 <button
                   type="button"
-                  onClick={() => onSuggestedPrice(Math.round(result.suggestedPrice))}
+                  onClick={() => onSuggestedPrice(Math.ceil(result.suggestedPrice))}
                   className="text-[10px] underline text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
                 >
                   Usar
@@ -393,6 +400,21 @@ export default function Calculator3D({
             <span className="text-[var(--color-text-secondary)]">Diezmo (10%):</span>
             <span className="font-mono text-[var(--color-text-primary)]">
               {fmt(result.tithe)}
+            </span>
+            <span className="text-[var(--color-text-secondary)]">Peso sugerido:</span>
+            <span className="flex items-center gap-2">
+              <span className="font-mono text-[var(--color-text-primary)]">
+                {Math.ceil(suggestedWeightGrams)} g
+              </span>
+              {onSuggestedWeight && suggestedWeightGrams > 0 && (
+                <button
+                  type="button"
+                  onClick={() => onSuggestedWeight(Math.ceil(suggestedWeightGrams))}
+                  className="text-[10px] underline text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                >
+                  Usar
+                </button>
+              )}
             </span>
           </div>
         </div>

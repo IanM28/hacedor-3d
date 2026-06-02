@@ -14,6 +14,7 @@ import dashboardRoutes from './routes/dashboard.routes'
 import supplierRoutes from './routes/supplier.routes'
 import filamentRoutes from './routes/filament.routes'
 import uploadRoutes from './routes/upload.routes'
+import shippingRoutes from './routes/shipping.routes'
 
 export const app = express()
 
@@ -48,6 +49,7 @@ app.use('/api/suppliers', authenticate, requireAdmin, supplierRoutes)
 app.use('/api/dashboard', authenticate, requireAdmin, dashboardRoutes)
 app.use('/api/filaments', filamentRoutes)
 app.use('/api/uploads', uploadRoutes)
+app.use('/api/shipping', shippingRoutes)
 
 app.use(errorHandler)
 

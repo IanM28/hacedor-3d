@@ -28,6 +28,9 @@ export const createOrderSchema = z.object({
   phone: z.string().min(8, 'Teléfono mínimo 8 caracteres'),
   paymentMethod: paymentMethodEnum,
   shippingCost: z.number().min(0).optional(),
+  shippingProvider: z.string().optional(),
+  shippingService: z.string().optional(),
+  shippingPostalCode: z.string().optional(),
   items: z
     .array(
       z.object({

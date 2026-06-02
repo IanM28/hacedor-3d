@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "backfill:weights": "ts-node --transpile-only scripts/backfill-product-weight.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",

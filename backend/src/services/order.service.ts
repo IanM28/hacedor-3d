@@ -49,6 +49,9 @@ interface CreateOrderParams {
   phone: string
   paymentMethod: PaymentMethod
   shippingCost?: number
+  shippingProvider?: string
+  shippingService?: string
+  shippingPostalCode?: string
   items: { productId: string; quantity: number }[]
 }
 
@@ -80,6 +83,9 @@ export const orderService = {
     phone,
     paymentMethod,
     shippingCost = 0,
+    shippingProvider,
+    shippingService,
+    shippingPostalCode,
     items,
   }: CreateOrderParams) {
     if (!userId && !guestEmail) {
@@ -125,6 +131,9 @@ export const orderService = {
           phone,
           paymentMethod,
           shippingCost,
+          shippingProvider,
+          shippingService,
+          shippingPostalCode,
           total,
           items: {
             create: items.map(item => {

@@ -75,6 +75,7 @@ model Product {
   description   String
   price         Float
   stock         Int      @default(0)
+  weight        Float    @default(0)
   images        String[]
   isActive      Boolean  @default(true)
   isFeatured    Boolean  @default(false)
@@ -116,19 +117,24 @@ model CartItem {
 }
 
 model Order {
-  id             String        @id @default(uuid())
-  userId         String?
-  guestEmail     String?
-  status         OrderStatus   @default(PENDING)
-  total          Float
-  shippingCost   Float         @default(0)
-  contactName    String
-  address        String
-  phone          String
-  paymentMethod  PaymentMethod @default(MERCADOPAGO)
-  mpPaymentId    String?
-  mpPreferenceId String?
-  createdAt      DateTime      @default(now())
+  id                     String        @id @default(uuid())
+  userId                 String?
+  guestEmail             String?
+  status                 OrderStatus   @default(PENDING)
+  total                  Float
+  shippingCost           Float         @default(0)
+  contactName            String
+  address                String
+  phone                  String
+  paymentMethod          PaymentMethod @default(MERCADOPAGO)
+  mpPaymentId            String?
+  mpPreferenceId         String?
+  shippingProvider       String?
+  shippingService        String?
+  shippingPostalCode     String?
+  shippingTrackingNumber String?
+  shippingLabelUrl       String?
+  createdAt              DateTime      @default(now())
 
   user  User?       @relation(fields: [userId], references: [id])
   items OrderItem[]
