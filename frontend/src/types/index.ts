@@ -78,6 +78,9 @@ export interface Product {
   printHours?: number | null
   filamentGrams?: number | null
   profitMultiplier?: number | null
+  dimensionX?: number | null
+  dimensionY?: number | null
+  dimensionZ?: number | null
   filamentUsages?: ProductFilamentUsage[]
   createdAt?: string
 }
@@ -104,6 +107,9 @@ export interface CreateProductInput {
   price: number
   stock: number
   weight?: number
+  dimensionX?: number
+  dimensionY?: number
+  dimensionZ?: number
   images: string[]
   isActive?: boolean
   isFeatured?: boolean

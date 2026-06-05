@@ -3,6 +3,51 @@ import { prisma } from '../prisma/client'
 import { shippingService } from '../services/shipping.service'
 import type { ShippingQuoteInput, ShippingLabelInput } from '../schemas/shipping.schema'
 
+const DIM_FALLBACK_MM = 50
+const BOX_MIN_MM = 150
+
+interface CartProduct {
+  id: string
+  weight: number
+  dimensionX: number | null
+  dimensionY: number | null
+  dimensionZ: number | null
+}
+
+interface CartItem {
+  productId: string
+  quantity: number
+}
+
+function computeBoxCm(products: CartProduct[], items: CartItem[]): {
+  largo: number
+  ancho: number
+  alto: number
+} {
+  let maxY = BOX_MIN_MM
+  let maxX = BOX_MIN_MM
+  let accZ = 0
+
+  for (const item of items) {
+    const p = products.find(pr => pr.id === item.productId)
+    const x = p?.dimensionX ?? DIM_FALLBACK_MM
+    const y = p?.dimensionY ?? DIM_FALLBACK_MM
+    const z = p?.dimensionZ ?? DIM_FALLBACK_MM
+
+    if (x > maxX) maxX = x
+    if (y > maxY) maxY = y
+    accZ += z * item.quantity
+  }
+
+  const altoMm = Math.max(BOX_MIN_MM, accZ)
+
+  return {
+    largo: Math.ceil(maxY / 10),
+    ancho: Math.ceil(maxX / 10),
+    alto: Math.ceil(altoMm / 10),
+  }
+}
+
 export const shippingController = {
   async quote(req: Request, res: Response, next: NextFunction) {
     try {
@@ -11,7 +56,14 @@ export const shippingController = {
       const productIds = items.map(i => i.productId)
       const products = await prisma.product.findMany({
         where: { id: { in: productIds }, isActive: true },
-        select: { id: true, weight: true, code: true },
+        select: {
+          id: true,
+          weight: true,
+          code: true,
+          dimensionX: true,
+          dimensionY: true,
+          dimensionZ: true,
+        },
       })
 
       if (products.length !== productIds.length) {
@@ -36,9 +88,10 @@ export const shippingController = {
         return
       }
 
-      const options = await shippingService.quote(postalCode, totalWeightGrams)
+      const box = computeBoxCm(products, items)
+      const options = await shippingService.quote(postalCode, totalWeightGrams, box)
 
-      res.json({ success: true, data: { options, totalWeightGrams } })
+      res.json({ success: true, data: { options, totalWeightGrams, box } })
     } catch (error) {
       next(error)
     }
@@ -67,11 +120,7 @@ export const shippingController = {
 
       res.json({
         success: true,
-        data: {
-          orderId: updated.id,
-          trackingNumber,
-          labelUrl,
-        },
+        data: { orderId: updated.id, trackingNumber, labelUrl },
       })
     } catch (error) {
       next(error)

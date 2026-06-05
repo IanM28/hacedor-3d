@@ -159,20 +159,28 @@ function formatDelivery(dias: number | string): string {
 // Devuelve tarifas realistas cuando la API real no está disponible,
 // permitiendo probar el flujo completo de checkout de punta a punta.
 
+export interface BoxDimensions {
+  largo: number  // cm
+  ancho: number  // cm
+  alto: number   // cm
+}
+
 function simulatedOptions(
   postalCode: string,
   totalWeightGrams: number,
+  box: BoxDimensions,
 ): NormalizedShippingOption[] {
-  // Zona basada en el primer dígito del CP
   const prefix = parseInt(postalCode.charAt(0), 10)
   const weightKg = totalWeightGrams / 1000
+  // Factor volumétrico: (L × A × A) / 5000 — fórmula estándar de courier
+  const volumetricKg = (box.largo * box.ancho * box.alto) / 5000
+  const chargeableKg = Math.max(weightKg, volumetricKg)
 
-  // Zonas de Correo Argentino / Andreani: Patagonia es zona alta
   const isPatagonia = prefix === 8 || prefix === 9
   const isGBA = prefix === 1
   const zoneMultiplier = isPatagonia ? 1.6 : isGBA ? 1.0 : 1.2
 
-  const base = Math.ceil(3500 * zoneMultiplier + weightKg * 800)
+  const base = Math.ceil(3500 * zoneMultiplier + chargeableKg * 800)
   const express = Math.ceil(base * 1.5)
   const andreani = Math.ceil(base * 1.1)
 
@@ -213,10 +221,13 @@ function isRouteNotFoundError(statusCode: number, body: unknown): boolean {
 
 // --- Servicio público ---
 
+const DEFAULT_BOX: BoxDimensions = { largo: 15, ancho: 15, alto: 15 }
+
 export const shippingService = {
   async quote(
     postalCode: string,
     totalWeightGrams: number,
+    box: BoxDimensions = DEFAULT_BOX,
   ): Promise<NormalizedShippingOption[]> {
     if (totalWeightGrams <= 0) {
       throw Object.assign(
@@ -235,19 +246,18 @@ export const shippingService = {
         cp_destino: postalCode,
         cp_origen: originPostalCode,
         peso: String(weightKg),
-        largo: '15',
-        ancho: '15',
-        alto: '15',
+        largo: String(box.largo),
+        ancho: String(box.ancho),
+        alto: String(box.alto),
         cantidad: '1',
       })
 
       const quoteUrl = `${baseUrl()}/cotizar?${params.toString()}`
       const { statusCode, body } = await httpCall({ method: 'GET', url: quoteUrl })
 
-      // Ruta no encontrada → activar fallback
       if (isRouteNotFoundError(statusCode, body)) {
         console.warn(`[shipping] Envíopack /cotizar devolvió ${statusCode}. Usando tarifas simuladas.`)
-        return simulatedOptions(postalCode, totalWeightGrams)
+        return simulatedOptions(postalCode, totalWeightGrams, box)
       }
 
       const response = body as EnviopackQuoteResponse
@@ -261,7 +271,7 @@ export const shippingService = {
 
       if (tarifas.length === 0) {
         console.warn('[shipping] Envíopack devolvió 0 tarifas. Usando tarifas simuladas.')
-        return simulatedOptions(postalCode, totalWeightGrams)
+        return simulatedOptions(postalCode, totalWeightGrams, box)
       }
 
       return tarifas.map(tarifa => ({
@@ -272,7 +282,6 @@ export const shippingService = {
         estimatedDelivery: formatDelivery(tarifa.dias_entrega),
       }))
     } catch (error: unknown) {
-      // Si ya tiene statusCode 400/422 lo relanzamos (son errores de negocio, no de API)
       if (
         error instanceof Error &&
         (error as Error & { statusCode?: number }).statusCode === 400
@@ -280,10 +289,9 @@ export const shippingService = {
         throw error
       }
 
-      // Cualquier otro fallo de red o de endpoint → fallback simulado
       const msg = error instanceof Error ? error.message : String(error)
       console.warn(`[shipping] Error al cotizar con Envíopack: ${msg}. Usando tarifas simuladas.`)
-      return simulatedOptions(postalCode, totalWeightGrams)
+      return simulatedOptions(postalCode, totalWeightGrams, box)
     }
   },
 

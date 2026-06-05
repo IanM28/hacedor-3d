@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Product" ADD COLUMN     "dimensionX" DOUBLE PRECISION,
+ADD COLUMN     "dimensionY" DOUBLE PRECISION,
+ADD COLUMN     "dimensionZ" DOUBLE PRECISION;

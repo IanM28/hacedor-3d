@@ -7,6 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL
 interface ApiResponse<T> {
   success: boolean
   data: T
+  error?: unknown
 }
 
 function buildParams(filters: ProductFilters): URLSearchParams {
@@ -66,7 +67,10 @@ export const productService = {
       body: JSON.stringify(data),
     })
     const json = (await res.json()) as ApiResponse<Product>
-    if (!res.ok || !json.success) throw new Error('Error al crear producto')
+    if (!res.ok || !json.success) {
+      const msg = typeof json.error === 'string' ? json.error : 'Error al crear producto'
+      throw new Error(msg)
+    }
     return json.data
   },
 
@@ -77,7 +81,20 @@ export const productService = {
       body: JSON.stringify(data),
     })
     const json = (await res.json()) as ApiResponse<Product>
-    if (!res.ok || !json.success) throw new Error('Error al actualizar producto')
+    if (!res.ok || !json.success) {
+      const err = json.error
+      let msg = 'Error al actualizar producto'
+      if (typeof err === 'string') {
+        msg = err
+      } else if (err && typeof err === 'object') {
+        const flat = err as { fieldErrors?: Record<string, string[]>; formErrors?: string[] }
+        const fieldMsgs = Object.values(flat.fieldErrors ?? {}).flat()
+        const formMsgs = flat.formErrors ?? []
+        const all = [...formMsgs, ...fieldMsgs]
+        if (all.length > 0) msg = all.join(' · ')
+      }
+      throw new Error(msg)
+    }
     return json.data
   },
 

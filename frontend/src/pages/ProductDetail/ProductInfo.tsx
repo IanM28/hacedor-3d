@@ -6,6 +6,54 @@ import { useCartStore } from '../../store/cartStore'
 import { buildProductQuery } from '../../utils/whatsapp'
 import type { Product } from '../../types'
 
+interface DimPillProps {
+  label: string
+  value: number
+  axis: string
+}
+
+function DimPill({ label, value, axis }: DimPillProps) {
+  return (
+    <div className="flex flex-col items-center gap-1 rounded border border-[var(--color-border)] bg-zinc-900/60 px-3 py-2 min-w-0">
+      <span
+        className="font-mono text-[10px] uppercase tracking-widest"
+        style={{ color: 'var(--color-text-muted)' }}
+      >
+        {axis}
+      </span>
+      <span className="font-mono text-base font-medium text-[var(--color-text-primary)] leading-none">
+        {value}
+      </span>
+      <span className="font-mono text-[10px] text-[var(--color-text-muted)]">{label} · mm</span>
+    </div>
+  )
+}
+
+function ProductDimensions({
+  x,
+  y,
+  z,
+}: {
+  x: number | null | undefined
+  y: number | null | undefined
+  z: number | null | undefined
+}) {
+  if (!x && !y && !z) return null
+
+  return (
+    <div className="rounded-md border border-[var(--color-border)] bg-zinc-900/40 p-3">
+      <p className="mb-2.5 font-mono text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">
+        Dimensiones de la pieza
+      </p>
+      <div className="grid grid-cols-3 gap-2">
+        {x != null && <DimPill axis="X" label="Ancho" value={x} />}
+        {y != null && <DimPill axis="Y" label="Largo" value={y} />}
+        {z != null && <DimPill axis="Z" label="Alto" value={z} />}
+      </div>
+    </div>
+  )
+}
+
 export default function ProductInfo({ product }: { product: Product }) {
   const [qty, setQty] = useState(1)
   const { addItem } = useCartStore()
@@ -39,6 +87,12 @@ export default function ProductInfo({ product }: { product: Product }) {
       <p className="font-body text-sm leading-relaxed text-[var(--color-text-secondary)] whitespace-pre-line">
         {product.description}
       </p>
+
+      <ProductDimensions
+        x={product.dimensionX}
+        y={product.dimensionY}
+        z={product.dimensionZ}
+      />
 
       <p className={`font-mono text-xs ${stockColor}`}>{stockLabel}</p>
 

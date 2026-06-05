@@ -86,6 +86,9 @@ model Product {
   printHours        Float?
   filamentGrams     Float?
   profitMultiplier  Float?   @default(8)
+  dimensionX        Float?
+  dimensionY        Float?
+  dimensionZ        Float?
   createdAt         DateTime @default(now())
 
   category        Category               @relation(fields: [categoryId], references: [id])

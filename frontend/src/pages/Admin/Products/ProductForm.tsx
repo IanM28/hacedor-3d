@@ -21,6 +21,9 @@ const schema = z.object({
   price: z.coerce.number().positive('Precio debe ser positivo'),
   stock: z.coerce.number().int().min(0, 'Stock mínimo 0'),
   weight: z.coerce.number().min(0, 'Peso mínimo 0').optional(),
+  dimensionX: optNum,
+  dimensionY: optNum,
+  dimensionZ: optNum,
   categoryId: z.string().uuid('Seleccioná una categoría'),
   isActive: z.boolean(),
   isFeatured: z.boolean(),
@@ -146,6 +149,9 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
           price: product.price,
           stock: product.stock,
           weight: product.weight ?? 0,
+          dimensionX: product.dimensionX ?? undefined,
+          dimensionY: product.dimensionY ?? undefined,
+          dimensionZ: product.dimensionZ ?? undefined,
           categoryId: product.category.id,
           isActive: product.isActive,
           isFeatured: product.isFeatured,
@@ -194,6 +200,9 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
       ...values,
       images,
       weight: values.weight ?? 0,
+      dimensionX: cleanOpt(values.dimensionX),
+      dimensionY: cleanOpt(values.dimensionY),
+      dimensionZ: cleanOpt(values.dimensionZ),
       printHours: cleanOpt(values.printHours),
       profitMultiplier: cleanOpt(values.profitMultiplier),
       filamentUsages: materialRows.filter(r => r.filamentId && r.grams > 0),
@@ -251,6 +260,44 @@ export default function ProductForm({ product, onSubmit, isSubmitting }: Product
           error={errors.weight?.message}
           {...register('weight')}
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <p className="text-sm font-medium text-[var(--color-text-primary)]">
+          Dimensiones (mm)
+          <span className="ml-2 font-normal text-xs text-[var(--color-text-muted)]">
+            Ancho × Largo × Alto — se usan para calcular el cubaje de envío
+          </span>
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          <Input
+            label="Ancho X (mm)"
+            type="number"
+            step="0.1"
+            min="0"
+            placeholder="ej: 33"
+            error={errors.dimensionX?.message}
+            {...register('dimensionX')}
+          />
+          <Input
+            label="Largo Y (mm)"
+            type="number"
+            step="0.1"
+            min="0"
+            placeholder="ej: 90"
+            error={errors.dimensionY?.message}
+            {...register('dimensionY')}
+          />
+          <Input
+            label="Alto Z (mm)"
+            type="number"
+            step="0.1"
+            min="0"
+            placeholder="ej: 18"
+            error={errors.dimensionZ?.message}
+            {...register('dimensionZ')}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
