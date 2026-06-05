@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { filamentService } from '../services/filament.service'
-import type { CreateFilamentInput, UpdateFilamentInput } from '../types'
+import type { AdjustFilamentInput, CreateFilamentInput, UpdateFilamentInput } from '../types'
 
 export function useFilaments() {
   return useQuery({
@@ -31,6 +31,15 @@ export function useDeleteFilament() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => filamentService.remove(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['filaments'] }),
+  })
+}
+
+export function useAdjustFilament() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: AdjustFilamentInput }) =>
+      filamentService.adjust(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['filaments'] }),
   })
 }

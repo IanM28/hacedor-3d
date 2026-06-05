@@ -46,16 +46,38 @@ model Supplier {
 }
 
 model Filament {
-  id          String   @id @default(uuid())
-  brandName   String
-  material    String
-  colorName   String
-  colorHex    String?
-  pricePerKg  Float
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  id                  String   @id @default(uuid())
+  brandName           String
+  material            String
+  colorName           String
+  colorHex            String?
+  pricePerKg          Float
+  isActive            Boolean  @default(true)
+  initialWeightGrams  Float    @default(1000)
+  currentWeightGrams  Float    @default(1000)
+  tareWeightGrams     Float    @default(0)
+  createdAt           DateTime @default(now())
 
   productUsages ProductFilamentUsage[]
+  logs          FilamentLog[]
+}
+
+model FilamentLog {
+  id                  String          @id @default(uuid())
+  filamentId          String
+  productId           String?
+  type                FilamentLogType
+  gramsDelta          Float
+  previousWeightGrams Float
+  newWeightGrams      Float
+  grossWeightGrams    Float?
+  tareWeightGrams     Float?
+  quantity            Int?
+  notes               String?
+  createdAt           DateTime        @default(now())
+
+  filament Filament @relation(fields: [filamentId], references: [id])
+  product  Product? @relation(fields: [productId], references: [id])
 }
 
 model ProductFilamentUsage {
@@ -96,6 +118,7 @@ model Product {
   orderItems      OrderItem[]
   cartItems       CartItem[]
   filamentUsages  ProductFilamentUsage[]
+  filamentLogs    FilamentLog[]
 }
 
 model Cart {
@@ -152,6 +175,12 @@ model OrderItem {
 
   order   Order   @relation(fields: [orderId], references: [id])
   product Product @relation(fields: [productId], references: [id])
+}
+
+enum FilamentLogType {
+  MANUAL_ADJUSTMENT
+  SCALE_WEIGHING
+  PRODUCTION_CONSUMPTION
 }
 
 enum Role {

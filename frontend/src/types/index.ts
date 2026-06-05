@@ -30,6 +30,8 @@ export interface CreateSupplierInput {
 
 export type UpdateSupplierInput = Partial<CreateSupplierInput>
 
+export type FilamentLogType = 'MANUAL_ADJUSTMENT' | 'SCALE_WEIGHING' | 'PRODUCTION_CONSUMPTION'
+
 export interface Filament {
   id: string
   brandName: string
@@ -38,7 +40,25 @@ export interface Filament {
   colorHex?: string | null
   pricePerKg: number
   isActive: boolean
+  initialWeightGrams: number
+  currentWeightGrams: number
+  tareWeightGrams: number
   createdAt?: string
+}
+
+export interface FilamentLog {
+  id: string
+  filamentId: string
+  productId?: string | null
+  type: FilamentLogType
+  gramsDelta: number
+  previousWeightGrams: number
+  newWeightGrams: number
+  grossWeightGrams?: number | null
+  tareWeightGrams?: number | null
+  quantity?: number | null
+  notes?: string | null
+  createdAt: string
 }
 
 export interface ProductFilamentUsage {
@@ -56,9 +76,22 @@ export interface CreateFilamentInput {
   colorHex?: string
   pricePerKg: number
   isActive?: boolean
+  initialWeightGrams?: number
+  currentWeightGrams?: number
+  tareWeightGrams?: number
 }
 
 export type UpdateFilamentInput = Partial<CreateFilamentInput>
+
+export type AdjustFilamentInput =
+  | { mode: 'MANUAL'; currentWeightGrams: number; notes?: string }
+  | { mode: 'SCALE'; grossWeightGrams: number; notes?: string }
+
+export interface RegisterProductionInput {
+  productId: string
+  quantity: number
+  notes?: string
+}
 
 export interface Product {
   id: string

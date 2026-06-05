@@ -39,3 +39,12 @@ export const deleteFilament = async (req: Request, res: Response, next: NextFunc
     next(error)
   }
 }
+
+export const adjustFilament = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await filamentService.adjust(req.params.id, req.body)
+    res.json({ success: true, data })
+  } catch (error) {
+    next(error)
+  }
+}

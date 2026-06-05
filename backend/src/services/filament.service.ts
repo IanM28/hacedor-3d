@@ -1,5 +1,5 @@
 import { prisma } from '../prisma/client'
-import type { CreateFilamentInput, UpdateFilamentInput } from '../schemas/filament.schema'
+import type { AdjustFilamentInput, CreateFilamentInput, UpdateFilamentInput } from '../schemas/filament.schema'
 
 function notFound(): Error {
   return Object.assign(new Error('Filamento no encontrado'), { statusCode: 404 })
@@ -39,5 +39,48 @@ export const filamentService = {
     const existing = await prisma.filament.findUnique({ where: { id } })
     if (!existing) throw notFound()
     return prisma.filament.update({ where: { id }, data: { isActive: false } })
+  },
+
+  async adjust(id: string, input: AdjustFilamentInput) {
+    return prisma.$transaction(async tx => {
+      const filament = await tx.filament.findUnique({ where: { id } })
+      if (!filament) throw notFound()
+
+      const previousWeightGrams = filament.currentWeightGrams
+      let newWeightGrams: number
+      let grossWeightGrams: number | undefined
+      let tareWeightGrams: number | undefined
+
+      if (input.mode === 'SCALE') {
+        const net = Math.max(0, input.grossWeightGrams - filament.tareWeightGrams)
+        newWeightGrams = net
+        grossWeightGrams = input.grossWeightGrams
+        tareWeightGrams = filament.tareWeightGrams
+      } else {
+        newWeightGrams = input.currentWeightGrams
+      }
+
+      const gramsDelta = newWeightGrams - previousWeightGrams
+
+      const updated = await tx.filament.update({
+        where: { id },
+        data: { currentWeightGrams: newWeightGrams },
+      })
+
+      await tx.filamentLog.create({
+        data: {
+          filamentId: id,
+          type: input.mode === 'SCALE' ? 'SCALE_WEIGHING' : 'MANUAL_ADJUSTMENT',
+          gramsDelta,
+          previousWeightGrams,
+          newWeightGrams,
+          grossWeightGrams: grossWeightGrams ?? null,
+          tareWeightGrams: tareWeightGrams ?? null,
+          notes: input.notes ?? null,
+        },
+      })
+
+      return updated
+    })
   },
 }

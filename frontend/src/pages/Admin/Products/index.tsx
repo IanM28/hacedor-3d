@@ -8,6 +8,7 @@ import Modal from '../../../components/ui/Modal'
 import Button from '../../../components/ui/Button'
 import Badge from '../../../components/ui/Badge'
 import ProductForm from './ProductForm'
+import { RegisterProductionButton } from '../../../components/admin/RegisterProductionButton'
 import type { CreateProductInput, Product, UpdateProductInput } from '../../../types'
 
 function StockCell({
@@ -237,6 +238,7 @@ export default function AdminProducts() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 justify-end">
+                      <RegisterProductionButton product={product} />
                       <button
                         onClick={() => setEditProduct(product)}
                         aria-label={`Editar ${product.code}`}

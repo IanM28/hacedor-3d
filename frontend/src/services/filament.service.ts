@@ -1,4 +1,4 @@
-import type { CreateFilamentInput, Filament, UpdateFilamentInput } from '../types'
+import type { AdjustFilamentInput, CreateFilamentInput, Filament, UpdateFilamentInput } from '../types'
 import { useAuthStore } from '../store/authStore'
 import { getAuthHeaders } from './auth.service'
 
@@ -50,5 +50,18 @@ export const filamentService = {
       headers: authHeaders(),
     })
     if (!res.ok) throw new Error('Error al eliminar filamento')
+  },
+
+  async adjust(id: string, data: AdjustFilamentInput): Promise<Filament> {
+    const res = await fetch(`${API_URL}/filaments/${id}/adjust`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify(data),
+    })
+    const json = (await res.json()) as ApiResponse<Filament> & { message?: string }
+    if (!res.ok || !json.success) {
+      throw new Error(json.message ?? 'Error al ajustar inventario')
+    }
+    return json.data
   },
 }
