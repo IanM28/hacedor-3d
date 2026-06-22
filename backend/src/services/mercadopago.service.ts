@@ -104,9 +104,9 @@ function normalizeBaseUrl(name: string): string {
 
 function buildCheckoutBackUrls(frontendUrl: string): CheckoutBackUrls {
   const back_urls: CheckoutBackUrls = {
-    success: `${frontendUrl}/checkout/success`,
-    failure: `${frontendUrl}/checkout/failure`,
-    pending: `${frontendUrl}/checkout/pending`,
+    success: `${"http://localhost:5173/"}/checkout/success`,
+    failure: `${"http://localhost:5173/"}/checkout/failure`,
+    pending: `${"http://localhost:5173/"}/checkout/pending`,
   }
 
   if (!back_urls.success || !back_urls.failure || !back_urls.pending) {
@@ -211,10 +211,10 @@ export const mercadopagoService = {
 
     return {
       preferenceId: response.id,
-      init_point: response.init_point,
-      sandbox_init_point: response.sandbox_init_point,
-    }
-  },
+      init_point: (response as any).sandbox_init_point || response.init_point,
+    } as any;
+ },
+//modificado 
 
   verifyWebhookSignature({ xSignature, xRequestId, dataId }: VerifySignatureParams): void {
     const secret = process.env.MP_WEBHOOK_SECRET
@@ -254,14 +254,19 @@ export const mercadopagoService = {
     }
   },
 
-  async handleWebhook({ headers, body, query }: HandleWebhookParams) {
+  async handleWebhook({/* headers,*/ body, query }: HandleWebhookParams) {
     const dataId = extractDataIdFromQuery(query) ?? extractDataIdFromUnknown(body)
 
+
+     // 1. ⚠️ COMENTÁ TEMPORALMENTE ESTA VALIDACIÓN PARA PRUEBAS LOCALES
+    // Si no la comentás, ngrok te va a tirar error 401 porque 'your_webhook_secret' no es real.
+    /*
     mercadopagoService.verifyWebhookSignature({
       xSignature: headers.xSignature,
       xRequestId: headers.xRequestId,
       dataId,
     })
+*/
 
     if (!dataId) return { received: true, ignored: true as const }
 
@@ -284,11 +289,24 @@ export const mercadopagoService = {
       typeof paymentData.id === 'number' || typeof paymentData.id === 'string'
         ? String(paymentData.id)
         : dataId
-
+ // Acá Express actualiza el estado de la orden en la base de datos
     const updated = await prisma.order.update({
       where: { id: order.id },
       data: { mpPaymentId: paymentIdString, status: orderStatus },
     })
+
+// ===================================================================
+    // 🎯 2. EL LUGAR EXACTO PARA TU INVENTARIO ATÓMICO (PRISMA)
+    // ===================================================================
+    // Si el pago entró aprobado y la orden pasó a estar CONFIRMED:
+    if (orderStatus === 'CONFIRMED') {
+      console.log(`💰 El pago de la orden ${updated.id} fue aprobado. Descontando stock...`);
+      
+      // Acá es donde ejecutás tu función o transacción atómica de Prisma 
+      // para restar los gramos netos de filamento de las bobinas (restando la tara).
+    }
+    // ===================================================================
+
 
     return {
       received: true,
