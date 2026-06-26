@@ -104,9 +104,9 @@ function normalizeBaseUrl(name: string): string {
 
 function buildCheckoutBackUrls(frontendUrl: string): CheckoutBackUrls {
   const back_urls: CheckoutBackUrls = {
-    success: `${"http://localhost:5173/"}/checkout/success`,
-    failure: `${"http://localhost:5173/"}/checkout/failure`,
-    pending: `${"http://localhost:5173/"}/checkout/pending`,
+    success: `${frontendUrl}/checkout/success`,
+    failure: `${frontendUrl}/checkout/failure`,
+    pending: `${frontendUrl}/checkout/pending`,
   }
 
   if (!back_urls.success || !back_urls.failure || !back_urls.pending) {
@@ -254,19 +254,19 @@ export const mercadopagoService = {
     }
   },
 
-  async handleWebhook({/* headers,*/ body, query }: HandleWebhookParams) {
+  async handleWebhook({ headers, body, query }: HandleWebhookParams) {
     const dataId = extractDataIdFromQuery(query) ?? extractDataIdFromUnknown(body)
 
 
      // 1. ⚠️ COMENTÁ TEMPORALMENTE ESTA VALIDACIÓN PARA PRUEBAS LOCALES
     // Si no la comentás, ngrok te va a tirar error 401 porque 'your_webhook_secret' no es real.
-    /*
+    
     mercadopagoService.verifyWebhookSignature({
       xSignature: headers.xSignature,
       xRequestId: headers.xRequestId,
       dataId,
     })
-*/
+
 
     if (!dataId) return { received: true, ignored: true as const }
 
