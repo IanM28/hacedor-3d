@@ -1,127 +1,85 @@
-import 'dotenv/config'
-import bcrypt from 'bcrypt'
-import { PrismaClient, Role } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
+import * as fs from 'fs';
+import * as path from 'path';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
-async function seed() {
-  console.log('🌱 Iniciando el sembrado de datos (seed)...')
-
-  const categories = await Promise.all([
-    prisma.category.upsert({
-      where: { slug: 'aero' },
-      update: { name: 'Aeroespacial', isActive: true },
-      create: { name: 'Aeroespacial', slug: 'aero', isActive: true },
-    }),
-    prisma.category.upsert({
-      where: { slug: 'mod' },
-      update: { name: 'Modular', isActive: true },
-      create: { name: 'Modular', slug: 'mod', isActive: true },
-    }),
-  ])
-
-  const aeroCategory = categories.find(c => c.slug === 'aero')
-  const modCategory = categories.find(c => c.slug === 'mod')
-
-  if (!aeroCategory || !modCategory) throw new Error('Error al crear categorías')
-
-  const supplier = await prisma.supplier.upsert({
-    where: { id: 'default-supplier' },
-    update: {},
-    create: {
-      id: 'default-supplier',
-      name: 'Proveedor Demo',
-      email: 'proveedor@hacedor3d.com',
-      phone: '+54 9 2944 000000',
-      address: 'Bariloche, Río Negro, AR',
-      cbu: '0000000000000000000000',
-      isActive: true,
-    },
-  })
-
-  const productsData = [
-    {
-      code: 'AERO-01',
-      name: 'AERO-01',
-      description: 'Pieza de diseño de estética aeroespacial.',
-      price: 24999,
-      stock: 6,
-      categoryId: aeroCategory.id,
-    },
-    {
-      code: 'AERO-02',
-      name: 'AERO-02',
-      description: 'Geometría precisa con lenguaje técnico minimal.',
-      price: 28999,
-      stock: 3,
-      categoryId: aeroCategory.id,
-    },
-    {
-      code: 'MOD-01',
-      name: 'MOD-01',
-      description: 'Objeto modular y funcional con presencia premium.',
-      price: 19999,
-      stock: 12,
-      categoryId: modCategory.id,
-    },
-  ]
-
-  for (const p of productsData) {
-    await prisma.product.upsert({
-      where: { code: p.code },
-      update: {
-        name: p.name,
-        description: p.description,
-        price: p.price,
-        stock: p.stock,
-        categoryId: p.categoryId,
-        supplierId: supplier.id,
-      },
-      create: {
-        code: p.code,
-        name: p.name,
-        description: p.description,
-        price: p.price,
-        stock: p.stock,
-        images: [`/assets/products/${p.code.toLowerCase()}-1.webp`],
-        isActive: true,
-        isFeatured: true,
-        categoryId: p.categoryId,
-        supplierId: supplier.id,
-        supplierCost: p.price * 0.5,
-        markupPercent: 40,
-      },
-    })
+async function main() {
+  // process.cwd() apunta directo a la carpeta 'backend' donde ejecutas el comando
+  const backupPath = path.join(process.cwd(), 'backup_real.json');
+  
+  if (!fs.existsSync(backupPath)) {
+    console.log('❌ Error: No se encontró el archivo backup_real.json en la raíz del backend.');
+    return;
   }
 
-  const adminPasswordHash = await bcrypt.hash('Admin123!', 10)
+  console.log('📖 Leyendo copia de respaldo completa con tus datos reales...');
+  const data = JSON.parse(fs.readFileSync(backupPath, 'utf-8'));
 
-  await prisma.user.upsert({
-    where: { email: 'admin@hacedor3d.com' },
-    update: {
-      password: adminPasswordHash,
-      role: Role.ADMIN,
-      isActive: true,
-    },
-    create: {
-      email: 'admin@hacedor3d.com',
-      name: 'Admin',
-      lastName: 'Hacedor3D',
-      password: adminPasswordHash,
-      role: Role.ADMIN,
-      isActive: true,
-    },
-  })
+  console.log('🗑️ Limpiando tablas viejas de Neon en orden seguro...');
+  await prisma.productFilamentUsage.deleteMany();
+  await prisma.filamentLog.deleteMany();
+  await prisma.cartItem.deleteMany();
+  await prisma.cart.deleteMany();
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.filament.deleteMany();
+  await prisma.supplier.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.user.deleteMany();
 
-  console.log('✅ Seed finalizado con éxito.')
+  console.log('🚀 Sincronizando catálogo real hacia la nube de Neon...');
+
+  // 1. Tablas primarias (independientes)
+  for (const d of data.users) {
+    await prisma.user.create({ data: d });
+  }
+  for (const d of data.categories) {
+    await prisma.category.create({ data: d });
+  }
+  for (const d of data.suppliers) {
+    await prisma.supplier.create({ data: d });
+  }
+
+  // 2. Tablas secundarias (dependen de las anteriores)
+  for (const d of data.filaments) {
+    await prisma.filament.create({ data: d });
+  }
+  for (const d of data.products) {
+    await prisma.product.create({ data: d });
+  }
+
+  // 3. Tablas terciarias (dependen de productos, filamentos o usuarios)
+  for (const d of data.productFilamentUsage) {
+    await prisma.productFilamentUsage.create({ data: d });
+  }
+  for (const d of data.filamentLogs) {
+    await prisma.filamentLog.create({ data: d });
+  }
+  for (const d of data.orders) {
+    await prisma.order.create({ data: d });
+  }
+  for (const d of data.carts) {
+    await prisma.cart.create({ data: d });
+  }
+
+  // 4. Tablas cuaternarias (dependen de las órdenes y carritos)
+  for (const d of data.orderItems) {
+    await prisma.orderItem.create({ data: d });
+  }
+  for (const d of data.cartItems) {
+    await prisma.cartItem.create({ data: d });
+  }
+
+  console.log('🏁 ¡Sincronización finalizada! Tu Neon ahora es un espejo de tu entorno local.');
 }
 
-seed()
-  .then(async () => {
-    await prisma.$disconnect()
+main()
+  .catch((e) => {
+    console.error('❌ Error inyectando datos en Neon:', e);
+    process.exit(1);
   })
-  .catch(async e => {
-    console.error('❌ Error en el seed:', e)
-    await prisma.$disconnect()
-    process.exit(1)
-  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

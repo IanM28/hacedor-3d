@@ -8,6 +8,7 @@ frontend/.env
 frontend/.env.*
 backend/.env
 backend/.env.*
+backup_real.json
 
 # Build
 dist/
