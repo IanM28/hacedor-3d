@@ -2,13 +2,14 @@ import { Link } from 'react-router-dom'
 import { useProducts } from '../../hooks/useProducts'
 import ProductCard from '../../components/features/ProductCard'
 import ProductCardSkeleton from '../Catalog/ProductCardSkeleton'
+import { isPublicCatalogProduct } from '../../utils/catalog'
 
 export default function FeaturedPreview() {
   const { data: products, isLoading, isError } = useProducts({ featured: true })
-  const featured = products?.slice(0, 3)
+  const featured = products?.filter(isPublicCatalogProduct).slice(0, 3)
 
   return (
-    <section className="bg-[var(--color-bg)] px-6 py-20 sm:px-8">
+    <section className="px-6 pb-20 pt-10 sm:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -27,7 +28,7 @@ export default function FeaturedPreview() {
           </Link>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {isLoading && Array.from({ length: 3 }).map((_, i) => <ProductCardSkeleton key={i} />)}
 
           {!isLoading && isError && (

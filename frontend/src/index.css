@@ -20,6 +20,22 @@
   --color-red: #c0392b;
   --color-whatsapp: #25d366;
   --color-white: #fafafa;
+  --color-on-accent: #141414;
+}
+
+.storefront {
+  --color-bg: #e6e4df;
+  --color-surface: #f7f6f3;
+  --color-surface-2: #eeece7;
+  --color-accent: #3e6b4c;
+  --color-accent-hover: #32583e;
+  --color-accent-dim: #e3ede6;
+  --color-text-primary: #161616;
+  --color-text-secondary: #5c5954;
+  --color-text-muted: #8a867e;
+  --color-border: #d5d1c8;
+  --color-border-light: #c4bfb5;
+  --color-on-accent: #141414;
 }
 
 body {
@@ -28,6 +44,11 @@ body {
   background: var(--color-bg);
   color: var(--color-text-primary);
   font-family: 'DM Sans', sans-serif;
+}
+
+body:has(.storefront) {
+  background: #e6e4df;
+  color: #161616;
 }
 
 .font-display {

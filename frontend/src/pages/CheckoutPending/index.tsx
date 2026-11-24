@@ -26,7 +26,7 @@ export default function CheckoutPending() {
       <div className="flex flex-col items-center gap-2 sm:flex-row">
         <Link
           to="/"
-          className="rounded-md bg-[var(--color-accent)] px-5 py-2.5 font-body text-sm text-[var(--color-bg)] transition-colors hover:bg-[var(--color-accent-hover)]"
+          className="rounded-md bg-[var(--color-accent)] px-5 py-2.5 font-body text-sm text-[var(--color-on-accent)] transition-colors hover:bg-[var(--color-accent-hover)]"
         >
           Volver al inicio
         </Link>

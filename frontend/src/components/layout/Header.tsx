@@ -58,7 +58,7 @@ export default function Header() {
           >
             <ShoppingCart className="size-5" />
             <span
-              className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-[var(--color-accent)] font-mono text-[10px] leading-none text-[var(--color-bg)]"
+              className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-[var(--color-accent)] font-mono text-[10px] leading-none text-[var(--color-on-accent)]"
               aria-hidden
             >
               {count > 99 ? '99' : count}

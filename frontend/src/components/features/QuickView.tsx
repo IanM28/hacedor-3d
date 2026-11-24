@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -18,6 +18,9 @@ export interface QuickViewProps {
 export default function QuickView({ product, isOpen, onClose }: QuickViewProps) {
   const navigate = useNavigate()
   const { addItem } = useCartStore()
+  const [failedSrc, setFailedSrc] = useState<string | null>(null)
+  const image = product?.images[0]
+  const showImage = Boolean(image) && failedSrc !== image
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() },
@@ -57,7 +60,7 @@ export default function QuickView({ product, isOpen, onClose }: QuickViewProps) 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl"
+            className="storefront relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] shadow-2xl"
             onMouseDown={e => e.stopPropagation()}
           >
             <button
@@ -71,8 +74,13 @@ export default function QuickView({ product, isOpen, onClose }: QuickViewProps) 
 
             <div className="grid grid-cols-1 sm:grid-cols-2">
               <div className="aspect-square overflow-hidden bg-[var(--color-surface-2)] sm:rounded-bl-md sm:rounded-tl-md">
-                {product.images[0] ? (
-                  <img src={product.images[0]} alt={product.name} className="h-full w-full object-cover" />
+                {showImage ? (
+                  <img
+                    src={image}
+                    alt={product.name}
+                    className="h-full w-full object-contain p-4"
+                    onError={() => setFailedSrc(image ?? null)}
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
                     <span className="font-mono text-xs text-[var(--color-text-muted)]">{product.code}</span>

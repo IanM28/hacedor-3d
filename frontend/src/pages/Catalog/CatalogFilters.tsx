@@ -8,6 +8,13 @@ interface CatalogFiltersProps {
   onFeaturedChange: (value: boolean) => void
 }
 
+const chip =
+  'shrink-0 rounded-md border px-3 py-1.5 font-body text-sm transition-colors'
+const activeChip =
+  'border-[var(--color-accent)] bg-[var(--color-accent)] font-medium text-[var(--color-on-accent)]'
+const idleChip =
+  'border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-light)] hover:text-[var(--color-text-primary)]'
+
 export default function CatalogFilters({
   categories,
   selectedCategory,
@@ -15,22 +22,14 @@ export default function CatalogFilters({
   onCategoryChange,
   onFeaturedChange,
 }: CatalogFiltersProps) {
-  const activeBtn =
-    'bg-[var(--color-accent)] text-[var(--color-bg)] font-medium'
-  const idleBtn =
-    'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
-
   return (
-    <aside className="w-full lg:w-44 lg:shrink-0">
-      <p className="font-mono text-[10px] tracking-widest text-[var(--color-text-muted)]">
-        FILTROS
-      </p>
-
-      <div className="mt-3 flex flex-row flex-wrap gap-2 lg:flex-col lg:gap-1">
+    <div className="overflow-x-auto">
+      <div className="flex w-max gap-2" role="toolbar" aria-label="Filtros de colección">
         <button
           type="button"
           onClick={() => onCategoryChange(undefined)}
-          className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${!selectedCategory ? activeBtn : idleBtn}`}
+          className={`${chip} ${!selectedCategory ? activeChip : idleChip}`}
+          aria-pressed={!selectedCategory}
         >
           Todos
         </button>
@@ -40,23 +39,22 @@ export default function CatalogFilters({
             key={cat.id}
             type="button"
             onClick={() => onCategoryChange(cat.slug)}
-            className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${selectedCategory === cat.slug ? activeBtn : idleBtn}`}
+            className={`${chip} ${selectedCategory === cat.slug ? activeChip : idleChip}`}
+            aria-pressed={selectedCategory === cat.slug}
           >
             {cat.name}
           </button>
         ))}
-      </div>
 
-      <label className="mt-5 flex cursor-pointer items-center gap-2 font-body text-sm text-[var(--color-text-secondary)]">
-        <input
-          type="checkbox"
-          checked={featuredOnly}
-          onChange={e => onFeaturedChange(e.target.checked)}
-          className="accent-[var(--color-accent)]"
-          aria-label="Mostrar solo destacados"
-        />
-        Solo destacados
-      </label>
-    </aside>
+        <button
+          type="button"
+          onClick={() => onFeaturedChange(!featuredOnly)}
+          className={`${chip} ${featuredOnly ? activeChip : idleChip}`}
+          aria-pressed={featuredOnly}
+        >
+          Destacados
+        </button>
+      </div>
+    </div>
   )
 }

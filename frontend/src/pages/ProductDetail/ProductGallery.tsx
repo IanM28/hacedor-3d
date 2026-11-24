@@ -9,13 +9,15 @@ interface ProductGalleryProps {
 
 export default function ProductGallery({ images, alt, code }: ProductGalleryProps) {
   const [selected, setSelected] = useState(0)
+  const [failedSrc, setFailedSrc] = useState<string | null>(null)
   const current = images[selected]
+  const showImage = Boolean(current) && failedSrc !== current
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative aspect-square overflow-hidden rounded-md bg-zinc-900">
+      <div className="relative aspect-square overflow-hidden rounded-md bg-[var(--color-surface-2)]">
         <AnimatePresence mode="wait">
-          {current ? (
+          {showImage ? (
             <motion.img
               key={selected}
               src={current}
@@ -25,6 +27,7 @@ export default function ProductGallery({ images, alt, code }: ProductGalleryProp
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className="h-full w-full object-contain"
+              onError={() => setFailedSrc(current)}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
@@ -48,7 +51,7 @@ export default function ProductGallery({ images, alt, code }: ProductGalleryProp
                   : 'border-[var(--color-border)] hover:border-[var(--color-border-light)]'
               }`}
             >
-              <img src={img} alt={`Miniatura ${idx + 1}`} className="h-full w-full object-contain bg-zinc-900" />
+              <img src={img} alt={`Miniatura ${idx + 1}`} className="h-full w-full object-contain bg-[var(--color-surface-2)]" />
             </button>
           ))}
         </div>

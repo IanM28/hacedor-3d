@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import Button from '../ui/Button'
 import Badge from '../ui/Badge'
 import { useCartStore } from '../../store/cartStore'
@@ -14,11 +13,13 @@ export interface ProductCardProps {
 
 export default function ProductCard({ product, onAddToCart, onQuickView }: ProductCardProps) {
   const [hovered, setHovered] = useState(false)
+  const [failedSrc, setFailedSrc] = useState<string | null>(null)
   const navigate = useNavigate()
   const { addItem } = useCartStore()
 
   const secondImage = product.images[1]
   const displayImage = hovered && secondImage ? secondImage : product.images[0]
+  const showImage = Boolean(displayImage) && failedSrc !== displayImage
   const outOfStock = product.stock === 0
   const lowStock = product.stock > 0 && product.stock < 5
 
@@ -30,20 +31,28 @@ export default function ProductCard({ product, onAddToCart, onQuickView }: Produ
     }
   }
 
+  const stockLabel = outOfStock
+    ? 'Sin stock'
+    : lowStock
+      ? `Últimas ${product.stock} unidades`
+      : 'En stock'
+  const stockClass = outOfStock || lowStock
+    ? 'text-[var(--color-red)]'
+    : 'text-[var(--color-text-secondary)]'
+
   return (
-    <motion.article
-      whileHover={{ scale: 1.015 }}
-      transition={{ duration: 0.18, ease: 'easeOut' }}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      className="flex flex-col rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors hover:border-[var(--color-accent)]"
+    <article
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="flex h-full flex-col rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors hover:border-[var(--color-accent)]"
     >
       <div className="relative aspect-square overflow-hidden rounded-t-md bg-[var(--color-surface-2)]">
-        {displayImage ? (
+        {showImage ? (
           <img
             src={displayImage}
             alt={product.name}
-            className="h-full w-full object-cover transition-opacity duration-300"
+            className="h-full w-full object-contain p-4"
+            onError={() => setFailedSrc(displayImage)}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
@@ -51,18 +60,18 @@ export default function ProductCard({ product, onAddToCart, onQuickView }: Produ
           </div>
         )}
 
-        <div className="absolute left-2 top-2 flex flex-col gap-1">
-          {product.isFeatured && <Badge variant="accent">Destacado</Badge>}
-          {lowStock && <Badge variant="danger">Últimas {product.stock} unidades</Badge>}
-          {outOfStock && <Badge variant="muted">Sin stock</Badge>}
-        </div>
+        {product.isFeatured && (
+          <div className="absolute left-2 top-2">
+            <Badge variant="accent">Destacado</Badge>
+          </div>
+        )}
 
         {onQuickView && hovered && (
-          <div className="absolute inset-0 flex items-end justify-center pb-3">
+          <div className="absolute inset-x-0 bottom-0 flex justify-center pb-3">
             <button
               type="button"
               onClick={e => { e.stopPropagation(); onQuickView(product) }}
-              className="rounded-md bg-[var(--color-bg)]/80 px-3 py-1.5 font-mono text-[10px] tracking-wide text-[var(--color-text-primary)] backdrop-blur-sm transition-colors hover:bg-[var(--color-surface)]"
+              className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 font-mono text-[10px] tracking-wide text-[var(--color-text-primary)] transition-colors hover:border-[var(--color-border-light)]"
             >
               Vista rápida
             </button>
@@ -78,15 +87,20 @@ export default function ProductCard({ product, onAddToCart, onQuickView }: Produ
         <p className="font-mono text-base text-[var(--color-text-primary)]">
           ${product.price.toLocaleString('es-AR')}
         </p>
-        <div className="mt-auto flex flex-col gap-2">
+        <p className={`font-mono text-xs ${stockClass}`}>{stockLabel}</p>
+        <div className="mt-auto flex flex-col items-center gap-2">
           <Button size="sm" variant="primary" disabled={outOfStock} onClick={handleAddToCart} className="w-full">
             {outOfStock ? 'Sin stock' : 'Agregar al carrito'}
           </Button>
-          <Button size="sm" variant="secondary" onClick={() => navigate(`/productos/${product.id}`)} className="w-full">
+          <button
+            type="button"
+            onClick={() => navigate(`/productos/${product.id}`)}
+            className="font-body text-sm text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
+          >
             Ver detalle
-          </Button>
+          </button>
         </div>
       </div>
-    </motion.article>
+    </article>
   )
 }

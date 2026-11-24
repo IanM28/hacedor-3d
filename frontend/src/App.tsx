@@ -21,7 +21,7 @@ import AdminOrders from './pages/Admin/Orders'
 
 function PublicLayout() {
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] font-body text-[var(--color-text-primary)]">
+    <div className="storefront min-h-screen bg-[var(--color-bg)] font-body text-[var(--color-text-primary)]">
       <Header />
       <CartDrawer />
       <main className="pt-14">

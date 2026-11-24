@@ -14,7 +14,7 @@ interface DimPillProps {
 
 function DimPill({ label, value, axis }: DimPillProps) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded border border-[var(--color-border)] bg-zinc-900/60 px-3 py-2 min-w-0">
+    <div className="flex min-w-0 flex-col items-center gap-1 rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2">
       <span
         className="font-mono text-[10px] uppercase tracking-widest"
         style={{ color: 'var(--color-text-muted)' }}
@@ -41,7 +41,7 @@ function ProductDimensions({
   if (!x && !y && !z) return null
 
   return (
-    <div className="rounded-md border border-[var(--color-border)] bg-zinc-900/40 p-3">
+    <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
       <p className="mb-2.5 font-mono text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">
         Dimensiones de la pieza
       </p>
